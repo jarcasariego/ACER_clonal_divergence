@@ -1,2 +1,2 @@
 # ACER_clonal_divergence
-Code supporting the manuscript "MULTI-OMIC ANALYSIS REVEALS MARKED PHENOTYPIC PLASTICITY IN CORAL CLONES OUTPLANTED TO DIVERGENT ENVIRONMENTS"
+ This reporsitory provides data and scripts used for the creation of the manuscript: "Multi-omic analysis reveals marked phenotypic plasticity in coral clones outplanted to divergent environments" 
