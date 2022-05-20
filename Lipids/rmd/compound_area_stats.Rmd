@@ -1,0 +1,261 @@
+---
+title: "lipid_stats"
+author: "Javier Rodriguez Casariego"
+date: "4/14/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load libraries, include=FALSE}
+
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(plotly)
+library(devtools) #install.packages("devtools")
+library(ggpubr)
+library(RColorBrewer)
+library(lubridate)
+library(gridExtra)
+library(corrplot)
+library(grid)
+library(scales)
+library(hrbrthemes)
+library(viridis)
+library(ggmap)
+library(waffle)
+library(FSA)
+library(scales)
+library(vegan)
+library(pairwiseAdonis) #install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
+library(multcomp)
+
+```
+
+## Loading Datasets and clean-up
+```{r}
+# Dataset:
+# Opening csv file with the data:
+long_data <- as.data.frame(read_csv("../data/alldata.final3.csv"))
+glimpse(long_data)
+
+# Transforming data:
+long_data$sample = as.factor(long_data$sample)
+long_data$coralID = as.factor(long_data$coralID)
+long_data$site = as.factor(long_data$site)
+long_data$depth.m = as.numeric(long_data$depth.m)
+long_data$genotype = as.factor(long_data$genotype)
+long_data$source = as.factor(long_data$source)
+long_data$polarity = as.factor(long_data$polarity)
+long_data$scan = as.factor(long_data$scan)
+long_data$Class = as.factor(long_data$Class)
+
+# Cleaning up the dataset:
+# To keep: class, fattyacid, ion, and formula
+data <- long_data %>% dplyr::select(sample, coralID, site, depth.m, genotype, source, 
+                Class, FattyAcid, Ion, Formula, polarity, scan,
+                Area, corrected_IS_area, Area.proportion, Correction.IS_prop, Correction.ISx)
+
+glimpse(data)
+summary(data)
+# 14,458 observations (MS1)
+
+
+levels(data$Class)
+
+```
+
+## PART 1: Number of Compounds per class vs depth
+```{r}
+# compounds dataset
+compounds_summ <- data %>% dplyr::select(sample, coralID, site, Class, Formula) %>% 
+  group_by(coralID, site, Class) %>%
+  count()
+
+# Transforming classes into factors:
+compounds_summ$Class <- as.factor(compounds_summ$Class)
+
+# Plot - bar:
+comp_plot <- compounds_summ %>% ggplot(aes(x = Class, y = n, fill = site)) + 
+  geom_boxplot() + xlab("Classes") + ylab("Number of Compounds") + theme_bw() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1), text = element_text(size = 16)) +
+  scale_fill_manual(values =c("#93b16b","#E6550D")) 
+comp_plot
+
+#ggsave(comp_plot, filename = "../output/compound_dist.png", device = "png", width = 138, height = 104, units = "mm", dpi = 600)
+
+compundsAdonis = adonis(compounds_summ$n ~ site*Class, data = compounds_summ, permutations = 9999, method = "bray")
+compundsAdonis
+
+```
+# Paired T-test between depths for compound counts
+```{r}
+# The paired t test compares the means of two paired groups, so look first at the difference between the two means. 
+# If the assumptions of the analysis are true, you can be 95% sure that the 95% confidence interval contains the true difference between means.
+
+# reorganize data:
+paired <- data %>% group_by(coralID, site, Class) %>%
+  count() %>% 
+  spread(site, n)
+
+glimpse(paired)
+summary(paired)
+
+# All samples combined first
+# Paired t-test:
+t.test(paired$LP15, paired$LP40, paired = TRUE, conf.level = 0.95)
+
+# Per class
+p.che <- paired %>% filter(Class == "ChE")
+p.fa <- paired %>% filter(Class == "FA")
+p.mg <- paired %>% filter(Class == "MG")
+p.mgdg <- paired %>% filter(Class == "MGDG")
+p.pc <- paired %>% filter(Class == "PC")
+p.pe <- paired %>% filter(Class == "PE")
+p.tg <- paired %>% filter(Class == "TG")
+p.we <- paired %>% filter(Class == "WE")
+
+t.test(p.che$LP15, p.che$LP40, paired = TRUE, conf.level = 0.95)
+t.test(p.fa$LP15, p.fa$LP40, paired = TRUE, conf.level = 0.95)
+t.test(p.mg$LP15, p.mg$LP40, paired = TRUE, conf.level = 0.95)
+t.test(p.mgdg$LP15, p.mgdg$LP40, paired = TRUE, conf.level = 0.95)
+t.test(p.pc$LP15, p.pc$LP40, paired = TRUE, conf.level = 0.95)
+t.test(p.pe$LP15, p.pe$LP40, paired = TRUE, conf.level = 0.95)
+t.test(p.tg$LP15, p.tg$LP40, paired = TRUE, conf.level = 0.95)
+t.test(p.we$LP15, p.we$LP40, paired = TRUE, conf.level = 0.95)
+
+```
+## PART 2: Relative area (quantity per compound) per class vs depth
+```{r}
+ms1gen <- data %>% 
+  group_by(sample, coralID, genotype, site, Class) %>%
+  summarise(count = n(),
+            sum = sum(Area, na.rm = TRUE),
+            mean = mean(Area, na.rm = TRUE),
+            sd = sd(Area, na.rm = TRUE),
+            median = median(Area, na.rm = TRUE),
+            Pmean = mean(Area.proportion, na.rm = TRUE),
+            Psum = sum(Area.proportion, na.rm = TRUE),
+            Cmean = mean(corrected_IS_area, na.rm = TRUE),
+            Csum = sum(corrected_IS_area, na.rm = TRUE))
+
+
+ms1gen
+
+
+# Stacked - Plot - bar:
+
+# area 
+#ms1gen %>% ggplot() + geom_bar(aes(x = sample, y = Pmean, fill = Class), 
+#                               position = "fill", stat = "identity") +
+#  xlab("Sample") + ylab("Area proportion") + 
+#  guides(fill = guide_legend("Classes")) +
+#  theme(legend.position = "right", text = element_text(size = 16))
+
+# Normalized area
+#ms1gen %>% ggplot() + geom_bar(aes(x = sample, y = Csum, fill = Class), 
+#                               position = "fill", stat = "identity") +
+#  xlab("Sample") + ylab("Normalized Area Proportion") + 
+#  guides(fill = guide_legend("Classes")) +
+#  theme(legend.position = "right", text = element_text(size = 16))
+
+
+# Normalized area
+by_site_plot <- ms1gen %>% ggplot() + geom_bar(aes(x = site, y = Csum, fill = Class), 
+                               position = "fill", stat = "identity") +
+  xlab("site") + ylab("Normalized Area Proportion") + 
+  guides(fill = guide_legend("Classes")) +
+  theme(legend.position = "right", text = element_text(size = 16)) +
+  theme_bw()
+by_site_plot
+
+# Normalized area (Javier request - use samples instead of genotype)
+area_plot <- ms1gen %>% ggplot() + geom_bar(aes(x = coralID, y = Csum, fill = Class), 
+                               position = "fill", stat = "identity") +
+  xlab("Colony") + ylab("Relative Area (normalized)") + 
+  guides(fill = guide_legend("Classes")) +
+  theme(legend.position = "right", text = element_text(size = 16)) +
+  facet_grid(rows = vars(site)) + #faceting plots by Depth and Site
+  theme_bw()
+area_plot
+
+#ggsave(area_plot, filename = "../output/area_dist.png", device = "png", width = 138, height = 94, units = "mm", dpi = 600)
+
+#ggsave(by_site_plot, filename = "../output/area_site.png", device = "png", width = 94, height = 94, units = "mm", dpi = 600)
+
+area_dat <- ms1gen[, c(2,4:5,12)] %>%  
+  spread(Class, Psum)
+
+area_sample = adonis(area_dat[, c(3:ncol(area_dat))] ~ coralID, data = area_dat, permutations = 9999, method = "bray")
+area_sample
+
+
+```
+PERMANOVA reveals that **Colony** has a significant effect on proportional abundance of lipids.<br><br>
+
+## Proportion analyses to compare relative abundance of each lipid class between sites
+Lets Run Chi square on each class proportions
+
+```{r}
+# create table with class total area for LP15
+LP15_summary <- ms1gen[, c(2,4:5,14)] %>% 
+  spread(site, Csum) %>%  
+  group_by(Class) %>%
+  summarize(LP15p = mean(LP15, na.rm = TRUE))
+#rename columns
+colnames(LP15_summary) <- c("class", "numShallow")
+ 
+# create table with class totals area for LP40
+LP40_summary <- ms1gen[, c(2,4:5,14)] %>% 
+  spread(site, Csum) %>%  
+  group_by(Class) %>%
+  summarize(LP40p = mean(LP40, na.rm = TRUE))
+#rename columns
+colnames(LP40_summary) <- c("class", "numDeep")
+
+#merge both depths 
+all_summ <- merge(LP15_summary, LP40_summary, by = "class", all = TRUE)
+#replace NAs with 0
+all_summ[is.na(all_summ)] <- 0
+
+#create variables for the sum of all classes
+LP15_total <- sum(all_summ$numShallow)
+LP40_total <- sum(all_summ$numDeep)
+
+#create a table with Chi stats for each class
+chi_table <- data.frame() #create empty df
+for(i in 1:nrow(all_summ)){ #loop through each class
+  numLP15Reg <-all_summ$numShallow[i] # variable for LP15 area for specific class
+  numLP40Reg <- all_summ$numDeep[i] # variable for LP40 area for specific class
+  totLP15 <- (LP15_total - numLP15Reg) # variable for total area in all classes minus the area of specific class fro LP15
+  totLP40 <- (LP40_total - numLP40Reg)  # variable for total area in all classes minus the area of specific class fro LP40
+  ct <- matrix(c(numLP15Reg,numLP40Reg,totLP15,totLP40), ncol = 2) # create contingency table
+  colnames(ct) <- c(as.character(all_summ$class[i]),paste0("Not",all_summ$class[i])) #label columns of contingency table
+  rownames(ct) <- c("LP15", "LP40") #lab rows of contingency table
+  print(ct)
+  x <-  data.frame(broom::tidy(prop.test(ct, correct = FALSE))) # create data frame storing the Chi sq stats results
+  x$class <- as.character(all_summ$class[i]) # add feature name to chi sq df
+  chi_table <- rbind(chi_table,x) #add chi sq stats to master table
+}
+#adjust chi pvalues
+chi_table$p.adj <- p.adjust(chi_table$p.value, method = "fdr")
+#merge chi table with region counts
+chi_table <- merge(all_summ,chi_table, by = "class")
+chi_table[,c(1,4:7,13)]
+```
+Chisq reveals that lipid abundance per class is significnatly influenced by the depth. <br><br>
+
+
+# Running PERMANOVA on area profiles
+
+```{r, permanova area profiles}
+
+set.seed(694)
+areaAdonis = adonis(area_dat[, c(3:ncol(area_dat))] ~ site, strata = area_dat$coralID, data = area_dat, permutations = 9999, method = "bray")
+
+areaAdonis
+```
+PERMANOVA reveals that **Depth** has marginally signifcant effect on proportional area per class.<br><br>
