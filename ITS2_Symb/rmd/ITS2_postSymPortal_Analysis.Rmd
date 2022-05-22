@@ -1,0 +1,281 @@
+---
+title: "ITS2_SymPortalData_analysis"
+author: "Javier Rodriguez Casariego"
+date: "03/05/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Install packages and dependencies. Load libraries
+
+```{r Installing/loading packages}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load("dplyr", "edgeR", "ggplot2", "MCMC.OTU", "pairwiseAdonis", "rcartocolor",
+               "RColorBrewer", "Redmonder", "reshape2", "vegan")
+
+pacman::p_load_gh("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
+
+
+if (!require("edgeR")){BiocManager::install("edgeR", update = FALSE) 
+  library(edgeR)}
+
+if (!require("tidyverse")) install.packages("tidyverse")
+
+options("scipen" = 10)
+```
+
+```{r load ITS2 relative data}
+
+its2Seq = read.delim("../data/SymPortalAnalysis_results/post_med_seqs/122_20200928_DBV_20200930T040607.seqs.relative.abund_only.txt", header = TRUE, check.names = FALSE)
+its2Seq <- as.data.frame(its2Seq)
+head(its2Seq)
+
+its2MetaData = read.delim("../data/SampleMetadata_ITS2_seq.txt", header = TRUE, check.names = FALSE)
+head(its2MetaData)
+
+its2Seq = merge(its2Seq, its2MetaData, by.x="sample_uid", sort=FALSE)
+names(its2Seq)
+
+its2Seq = its2Seq[, c(71:76, 2:70)]
+
+its2Seq$frag = factor(its2Seq$frag)
+levels(its2Seq$frag)
+
+its2Seq$depth = factor(its2Seq$depth)
+levels(its2Seq$depth) <- c("shallow", "deep")
+its2Seq = its2Seq[order(its2Seq$site, its2Seq$frag), ]
+
+
+head(its2Seq)
+```
+
+
+```{r, prepare sequences for plotting 2, results = 'hide'}
+sampleCounts = plyr::count(its2Seq, c('depth'))
+meltedList = melt(lapply(sampleCounts$freq,function(x){c(1:x)}))
+its2Seq$barPlotOrder = meltedList$value
+its2Seq2=its2Seq[c(1,ncol(its2Seq),2:(ncol(its2Seq)-1))]
+
+head(its2Seq2)
+names(its2Seq2)
+
+gssSeq = otuStack(its2Seq2, count.columns = c(8:length(its2Seq2[1, ])),
+                  condition.columns = c(1:7))[1:1794,] # remove summ rows by setting the maximum row number to OTUxSample
+
+
+
+levels(gssSeq$otu)
+
+levels(gssSeq$depth)
+levels(gssSeq$time) = c("shallow", "deep")
+levels(gssSeq$frag)
+
+```
+
+
+```{r, ITS2 sequence barplot, fig.show = 'hide'}
+
+colorCount = length(c(8:length(its2Seq2[1,])))
+getPalette = colorRampPalette(redmonder.pal(10, "qMSOStd"), bias = 1.7)
+
+its2SeqPlotA = ggplot(gssSeq, aes(x = frag, y = count, fill = fct_reorder(otu, count))) +
+  geom_bar(position = "stack", stat = "identity", color = "black",
+           size = 0.25) + 
+  ylab("Proportion") +
+  xlab("Coral Fragment") +
+  scale_fill_manual(values=rev(getPalette(colorCount)))+ 
+  
+  labs(fill = expression(paste(italic("ITS2"), " sequence"))) +
+  guides(fill = guide_legend(ncol = 2, reverse = TRUE)) +
+  facet_grid(rows = vars(depth), scales = "free_x") + #faceting plots by Depth and Site
+  theme_bw()
+
+its2SeqPlot = its2SeqPlotA +
+  theme(axis.title.x = element_text(color = "black", size = 12),
+        axis.text.x = element_text(color = "black", size = 12),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_text(color = "black", size = 12),
+        axis.text.y = element_text(color = "black", size = 12),
+        legend.position = "right",
+        legend.justification = "left",
+        legend.direction = "horizontal",
+        legend.title = element_text(color = "black", size = 12, hjust = 0.5, angle = 90),
+        legend.text = element_text(color = "black", size = 10),
+        legend.key = element_blank(),
+        legend.key.size = unit(0.4,"line"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.background = element_blank(),
+        strip.text.x = element_text(size = 12),
+        strip.text.y = element_text(size = 12),
+        strip.background = element_rect(fill = "white", size = 0.9)
+  )
+
+its2SeqPlot
+```
+<br><br>
+
+## Save the barplot
+```{r, save barplot, results = 'hide'}
+ggsave("../output/FigureITS2Seqs.eps", plot = its2SeqPlot, width = 8.5, height = 8.5, unit = "in", dpi = 600)
+```
+
+```{r, sequence plot, echo = FALSE, fig.width = 8, fig.height = 6}
+plot(its2SeqPlot)
+```
+<br><br>
+
+# *ITS2* type profiles
+***
+We can now look at the *ITS2* type profiles predicted by SymPortal.
+
+## Prepare *ITS2* type profile data
+Similar to what we did with the sequence data
+
+```{r, profile data prep, results = 'hide'}
+its2Profs = read.delim("../data/SymPortalAnalysis_results/its2_type_profiles/122_20200928_DBV_20200930T040607.profiles.relative.abund_only.txt", header = TRUE, check.names = FALSE)
+head(its2Profs)
+
+its2Profs = merge(its2Profs, its2MetaData, by.x="sample_uid", sort=FALSE)
+names(its2Profs)
+
+its2Profs = its2Profs[, c(8:13, 2:7)]
+
+its2Profs$frag = factor(its2Profs$frag)
+levels(its2Profs$frag)
+
+its2Profs$depth = factor(its2Profs$depth, levels = c("shallow", "deep"))
+its2Profs = its2Profs[order(its2Profs$site, its2Profs$frag), ]
+levels(its2Profs$depth)
+
+head(its2Profs)
+
+sampleCounts = plyr::count(its2Profs, c('depth'))
+meltedList = reshape2::melt(lapply(sampleCounts$freq,function(x){c(1:x)}))
+its2Profs$barPlotOrder = meltedList$value
+its2Profs=its2Profs[c(1,ncol(its2Profs),2:(ncol(its2Profs)-1))]
+colnames(its2Profs)[8:13] <- c("A3-A3t-A3ae-A3ac","A3-A3t-A3af-A3ae","A3-A3ac-A3ak","A3-A3t-A3al","A4","A3")
+head(its2Profs)
+```
+<br><br>
+
+
+```{r, prepare profiles for plotting 2, results = 'hide'}
+gssProf = otuStack(its2Profs, count.columns = c(8:length(its2Profs[1, ])),
+               condition.columns = c(1:7))[1:156,] # remove summ rows
+
+levels(gssProf$otu)
+
+levels(gssProf$depth)
+levels(gssProf$frag) 
+```
+
+```{r, ITS2 profile barplot, fig.show = 'hide'}
+
+colorCount = length(c(8:length(its2Profs[1,])))
+getPalette = colorRampPalette(redmonder.pal(3, "dPBIYlBu"), bias = 1.7)
+
+its2ProfsPlotA = ggplot(gssProf, aes(x = frag, y = count, fill = factor(otu))) +
+  geom_bar(position = "stack", stat = "identity", color = "black",
+           size = 0.25) + 
+  ylab("Proportion") +
+  xlab("Coral Fragment") +
+  scale_fill_manual(values=rev(getPalette(colorCount)))+ 
+  
+  labs(fill = expression(paste(italic("ITS2"), " profile"))) +
+  guides(fill = guide_legend(ncol = 1, reverse = TRUE)) +
+  facet_grid(rows = vars(depth), scales = "free_x") + #faceting plots by Depth and Site
+  theme_bw()
+
+its2ProfsPlot = its2ProfsPlotA +
+  theme(axis.title.x = element_text(color = "black", size = 12),
+        axis.text.x = element_text(color = "black", size = 12),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_text(color = "black", size = 12),
+        axis.text.y = element_text(color = "black", size = 12),
+        legend.position = "right",
+        legend.justification = "left",
+        legend.direction = "horizontal",
+        legend.title = element_text(color = "black", size = 12, hjust = 0.5, angle = 90),
+        legend.text = element_text(color = "black", size = 10),
+        legend.key = element_blank(),
+        legend.key.size = unit(0.4,"line"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.background = element_blank(),
+        strip.text.x = element_text(size = 12),
+        strip.text.y = element_text(size = 12),
+        strip.background = element_rect(fill = "white", size = 0.9)
+  )
+
+its2ProfsPlot
+```
+
+## Save the barplot
+```{r, save profiles barplot, results = 'hide'}
+ggsave("../output/FigureITS2Profs.eps", plot = its2ProfsPlot, width = 8.5, height = 8.5, unit = "in", dpi = 600)
+```
+
+```{r, profiles plot, echo = FALSE, fig.width = 8, fig.height = 6}
+plot(its2ProfsPlot)
+```
+
+# Statistical analyses on *ITS2* type profiles
+***
+## Cheking dispersion with PERMDISP
+Using ```betadisper()``` in *vegan* to look at multivariate homogeneity of dispersion (PERMDISP) between times and frags. This is using Bray-Curtis dissimilarity.
+
+```{r, betadispersion by frag}
+set.seed(694) #setting seed allows repetition of randomized processes
+
+its2dispF = betadisper(vegdist(its2Profs[, c(8:ncol(its2Profs))]), its2Profs$frag)
+
+anova(its2dispF)
+```
+Significant effect of frag on betadiversity.<br>
+
+```{r, betadispersion by time}
+set.seed(694)
+
+its2dispT = betadisper(vegdist(its2Profs[, c(8:ncol(its2Profs))]), its2Profs$depth)
+
+anova(its2dispT)
+```
+No significant effect of depth on betadiversity.<br>
+
+### Permutation test for pairwise comparisons
+Follow up with a permutation test to see where differences occur.
+
+```{r, permutation test}
+set.seed(694)
+
+its2PermTest = permutest(its2dispT, permutations = 9999, pairwise = T, model = "full", )
+its2PermTest
+```
+<br>
+```{r, permutest stats}
+its2PermTest$statistic
+```
+<br><br>
+
+## Running PERMANOVA 
+```{r, permanova profiles}
+set.seed(694)
+its2Adonis = adonis(its2Profs[, c(8:ncol(its2Profs))] ~ depth, strata = its2Profs$frag, 
+data = its2Profs, permutations = 9999, method = "bray")
+
+its2Adonis
+```
+PERMANOVA reveals that **Depth** has no signifcant effect on Symbiodiniaceae profiles.<br><br>
+
+```{r, permanova sequences}
+set.seed(694)
+its2SeqAdonis = adonis(its2Seq2[, c(8:ncol(its2Seq2))] ~ depth, strata = its2Profs$frag,
+data = its2Seq2, permutations = 9999, method = "bray")
+
+its2SeqAdonis
+```
+PERMANOVA reveals that **Depth** has no signifcant effect on Symbiodiniaceae community composition.<br><br>

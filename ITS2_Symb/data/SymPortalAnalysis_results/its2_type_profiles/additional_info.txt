@@ -1,0 +1,6 @@
+Species references
+Hansen, G. and N. Daugbjerg (2009). Symbiodinium natans sp. nob.: A free-living dinoflagellate from Tenerife (northeast Atlantic Ocean). Journal of Phycology 45(1): 251-263.
+Lee, S. Y., H. J. Jeong, N. S. Kang, T. Y. Jang, S. H. Jang and T. C. Lajeunesse (2015). Symbiodinium tridacnidorum sp. nov., a dinoflagellate common to Indo-Pacific giant clams, and a revised morphological description of Symbiodinium microadriaticum Freudenthal, emended Trench & Blank. European Journal of Phycology 50(2): 155-172.
+Trench, R. K. and L.-v. Thinh (1995). Gymnodinium linucheae sp. nov.: The dinoflagellate symbiont of the jellyfish Linuche unguiculata. European Journal of Phycology 30(2): 149-154.
+Stand_alone_data_set_samples output by humebc on 20200930T040607; data_analysis ID: 122; Number of data_set objects as part of output = 1; Number of data_set objects as part of analysis = 93
+Data_set ID: 549; Data_set name: 20200926_casariego; submitting_user: humebc; time_stamp: 20200927T002616

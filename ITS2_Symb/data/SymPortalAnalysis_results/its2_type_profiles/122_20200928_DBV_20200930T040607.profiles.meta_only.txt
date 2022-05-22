@@ -1,0 +1,7 @@
+ITS2 type profile UID	Clade	Majority ITS2 sequence	Associated species	ITS2 profile abundance local	ITS2 profile abundance DB	ITS2 type profile	Sequence accession / SymPortal UID	Average defining sequence proportions and [stdev]
+76680	A	A3	S. natans,S. tridacnidorum	9	16	A3-A3t-A3ae-A3ac	22385-35445-903836-364589	0.880[0.010]-0.066[0.011]-0.046[0.006]-0.008[0.004]
+75883	A	A3	S. natans,S. tridacnidorum	6	16	A3-A3t-A3af-A3ae	22385-35445-483064-903836	0.847[0.007]-0.056[0.013]-0.054[0.018]-0.043[0.014]
+75885	A	A3	S. natans,S. tridacnidorum	6	6	A3-A3ac-A3ak	22385-364589-907383	0.739[0.031]-0.194[0.027]-0.068[0.012]
+75886	A	A3	S. natans,S. tridacnidorum	4	4	A3-A3t-A3al	22385-35445-364534	0.743[0.019]-0.177[0.012]-0.080[0.017]
+75782	A	A4	S. linucheae	1	27	A4	29206	1.000[nan]
+75825	A	A3	S. natans,S. tridacnidorum	1	102	A3	22385	1.000[nan]
