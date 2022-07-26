@@ -3,6 +3,8 @@
 .RData
 .Ruserdata
 .DS_Store
-*.bedgraph
-*.vcf
-*.bam
+.bedgraph
+.vcf
+.bam
+.bed
+.txt
