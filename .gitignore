@@ -7,4 +7,7 @@
 .vcf
 .bam
 .bed
-.txt
+WGBS/analyses/Genomic_features/*
+WGBS/data/OSF/*
+TagSeq/data/ACER_Transcriptome(Libro_etal_2013)
+
