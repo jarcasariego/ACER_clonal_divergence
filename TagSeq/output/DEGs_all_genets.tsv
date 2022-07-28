@@ -1,0 +1,137 @@
+gene	annot
+isogroup10034	Transporter, ABC superfamily (Breast cancer resistance protein) ; ATP-binding cassette, subfamily G (WHITE), member 2 E=1e-72
+isogroup10501	Cobalamin synthesis protein
+isogroup109	Endoplasmic reticulum glucose-regulated protein (GRP94/endoplasmin), HSP90 family ; heat shock protein 90kDa beta E=1e-61
+isogroup11057	Peroxisome assembly factor 2 containing the AAA+-type ATPase domain ; peroxin-6 E=7e-57
+isogroup11087	Predicted small molecule transporter involved in cellular pH homeostasis (Batten disease protein in human) ; battenin E=2e-25
+isogroup11158	DNA polymerase delta, catalytic subunit ; DNA polymerase delta subunit 1 [EC:2.7.7.7] E=9e-72
+isogroup11324	diacylglycerol O-acyltransferase [EC:2.3.1.20] E=6e-104
+isogroup1134	Hydroxysteroid 17-beta dehydrogenase 11 ; retinol dehydrogenase 10 [EC:1.1.1.-] E=5e-59
+isogroup11602	GTP-binding ADP-ribosylation factor Arf1 ; ADP-ribosylation factor 1 E=2e-33
+isogroup11633	Uncharacterized conserved protein
+isogroup12299	Molecular chaperone (DnaJ superfamily) ; DnaJ homolog subfamily C member 11 E=2e-77
+isogroup1276	Uncharacterized membrane protein
+isogroup1297	Cu2+/Zn2+ superoxide dismutase SOD1
+isogroup13224	protein TIF31 E=2e-124
+isogroup13233	Glucosyltransferase - Alg6p ; alpha-1,3-glucosyltransferase [EC:2.4.1.-] E=3e-108
+isogroup13277	GINS complex subunit 2 E=1e-39
+isogroup133	Predicted sugar kinase ; heat shock transcription factor 1 E=3e-65
+isogroup13380	AAA+-type ATPase containing the peptidase M41 domain ; AFG3 family protein [EC:3.4.24.-] E=5e-155
+isogroup13537	Transcription factor PRD and related proteins, contain PAX and HOX domains ; paired box protein 3/7 E=4e-76
+isogroup13965	Heme A farnesyltransferase ; protoheme IX farnesyltransferase [EC:2.5.1.-] E=3e-41
+isogroup14028	Myosin assembly protein/sexual cycle protein and related proteins
+isogroup14055	Fibrillins and related proteins containing Ca2+-binding EGF-like domains
+isogroup14073	SWI-SNF chromatin-remodeling complex protein
+isogroup143	melanoma-associated antigen p97 E=9e-30
+isogroup14940	Transporter, ABC superfamily (Breast cancer resistance protein) ; ATP-binding cassette, subfamily G (WHITE), member 2 E=2e-83
+isogroup15209	origin recognition complex subunit 6 E=2e-140
+isogroup15767	sentrin-specific protease 8 [EC:3.4.22.-] E=3e-28
+isogroup16303	von Willebrand factor and related coagulation proteins ; meprin A, beta [EC:3.4.24.18] E=3e-71
+isogroup16307	Cytochrome oxidase assembly factor COX15 ; cytochrome c oxidase subunit XV assembly protein E=4e-148
+isogroup16816	sulfatase modifying factor 1 E=1e-05
+isogroup16835	Predicted transporter (major facilitator superfamily) ; MFS transporter, SP family, solute carrier family 2 (facilitated glucose transporter), member 12 E=8e-118
+isogroup16858	Kinesin (SMY1 subfamily) ; kinesin family member C2/C3 E=2e-46
+isogroup16916	Cubilin, multiligand receptor mediating cobalamin absorption ; nucleotide exchange factor SIL1 E=6e-19
+isogroup17011	dynein heavy chain, axonemal E=9e-132
+isogroup17175	Transporter, ABC superfamily (Breast cancer resistance protein) ; ATP-binding cassette, subfamily G (WHITE), member 2 E=4e-122
+isogroup17359	AAA ATPase containing von Willebrand factor type A (vWA) domain
+isogroup17746	Permease of the major facilitator superfamily ; MFS transporter, SP family, solute carrier family 2 (facilitated glucose transporter), member 1 E=4e-82
+isogroup178	Actin depolymerizing factor ; cofilin E=1e-22
+isogroup17940	FOG: Transposon-encoded proteins with TYA, reverse transcriptase, integrase domains in various combinations ; arginine vasopressin receptor 2 E=1e-92
+isogroup1841	Predicted transporter (major facilitator superfamily) ; MFS transporter, SP family, solute carrier family 2 (facilitated glucose transporter), member 8 E=4e-166
+isogroup18960	Kinesin light chain ; kinesin light chain E=9e-62
+isogroup19645	Apolipoprotein D/Lipocalin ; outer membrane lipoprotein Blc E=2e-55
+isogroup19737	O-methyltransferase
+isogroup20491	Myosin class V heavy chain
+isogroup2186	Elongation factor 1 beta/delta chain ; elongation factor 1-beta E=9e-37
+isogroup2194	Coiled-coil protein TPD52
+isogroup222	Cytochrome c oxidase, subunit I ; cytochrome c oxidase subunit I [EC:1.9.3.1] E=1e-70
+isogroup2279	60S ribosomal protein L31
+isogroup2329	Microtubule-associated protein TAU
+isogroup23720	Intracellular Cl- channel CLIC, contains GST domain
+isogroup241	Major epididymal secretory protein HE1 ; Niemann-Pick C2 protein E=8e-86
+isogroup2431	G protein beta subunit-like protein ; guanine nucleotide-binding protein subunit beta-2-like 1 protein E=6e-71
+isogroup24391	D-alanine-D-alanine ligase [EC:6.3.2.4] E=6e-170
+isogroup25326	FOG: Predicted E3 ubiquitin ligase ; E3 ubiquitin-protein ligase RNF115/126 [EC:6.3.2.19] E=5e-14
+isogroup25348	Aldehyde dehydrogenase ; aldehyde dehydrogenase family 9 member A1 [EC:1.2.1.47 1.2.1.3] E=6e-09
+isogroup25475	"NADH dehydrogenase [EC:1.6.99.3] E=8e-05"
+isogroup2579	Reductases with broad range of substrate specificities ; 3-hydroxyacyl-CoA dehydrogenase / 3a,7a,12a-trihydroxy-5b-cholest-24-enoyl-CoA hydratase [EC:1.1.1.35 4.2.1.107] E=7e-14
+isogroup2617	Gamma-glutamylcysteine synthetase ; glutamate--cysteine ligase catalytic subunit [EC:6.3.2.2] E=5e-173
+isogroup2637	Cytochrome c
+isogroup26417	Permease of the major facilitator superfamily ; MFS transporter, DHA1 family, tetracycline resistance protein E=8e-13
+isogroup26964	Lysophospholipase ; lysophospholipase II [EC:3.1.1.5] E=3e-10
+isogroup2823	FOG: Zn-finger ; transcription factor Sp5 E=9e-05
+isogroup2828	Uncharacterized conserved protein
+isogroup289	calpain, invertebrate [EC:3.4.22.-] E=4e-21
+isogroup2911	"NADH:ubiquinone oxidoreductase, NDUFV2/24 kD subunit ; NADH dehydrogenase (ubiquinone) flavoprotein 2 [EC:1.6.5.3 1.6.99.3] E=2e-43"
+isogroup293	Actin regulatory proteins (gelsolin/villin family) ; villin 1 E=4e-34
+isogroup30187	UDP-glucose 4-epimerase/UDP-sulfoquinovose synthase ; dTDP-glucose 4,6-dehydratase [EC:4.2.1.46] E=3e-141
+isogroup30290	GTP-binding ADP-ribosylation factor Arf1 ; ADP-ribosylation factor 1 E=6e-09
+isogroup3050	Inner centromere protein (INCENP), C-terminal domain
+isogroup3056	Ribosomal protein S7
+isogroup3083	Low-density lipoprotein receptors containing Ca2+-binding EGF-like domains ; low density lipoprotein receptor-related protein 5/6 E=3e-100
+isogroup3139	AAA+-type ATPase containing the peptidase M41 domain ; AFG3 family protein [EC:3.4.24.-] E=5e-66
+isogroup3182	Fibrillins and related proteins containing Ca2+-binding EGF-like domains
+isogroup3243	40S ribosomal protein S20 ; small subunit ribosomal protein S20e E=2e-57
+isogroup3273	Peroxidase/oxygenase ; carboxypeptidase N regulatory subunit E=1e-15
+isogroup3294	Electron transfer flavoprotein ubiquinone oxidoreductase
+isogroup3303	Collagens (type IV and type XIII), and related proteins
+isogroup3306	Ubiquitin-conjugating enzyme ; baculoviral IAP repeat-containing protein 6 (apollon) [EC:6.3.2.19] E=5e-78
+isogroup3317	F0F1-type ATP synthase, alpha subunit ; F-type H+-transporting ATPase subunit alpha [EC:3.6.3.14] E=5e-82
+isogroup3376	Transcriptional repressors of the hairy/E(spl) family (contains HLH) ; hairy and enhancer of split related with YRPW motif E=2e-163
+isogroup35083	E3 ubiquitin-protein ligase HECTD1 [EC:6.3.2.19] E=1e-19
+isogroup3562	TEF-1 and related transcription factor, TEAD family
+isogroup3586	Succinate dehydrogenase, flavoprotein subunit ; succinate dehydrogenase (ubiquinone) flavoprotein subunit [EC:1.3.5.1] E=6e-76
+isogroup3657	Calmodulin and related proteins (EF-Hand superfamily) ; centrin-2 E=4e-05
+isogroup3840	HMG-box transcription factor ; transcription factor SOX1/2/3/14/21 (SOX group B) E=4e-42
+isogroup3883	Collagens (type IV and type XIII), and related proteins
+isogroup3958	FOG: Immunoglobin and related proteins ; roundabout, axon guidance receptor 3 E=7e-07
+isogroup4005	Fibroblast/platelet-derived growth factor receptor and related receptor tyrosine kinases ; tyrosine-protein kinase receptor torso [EC:2.7.10.1] E=3e-33
+isogroup40681	Caspase, apoptotic cysteine protease
+isogroup417	Carbonic anhydrase ; carbonic anhydrase [EC:4.2.1.1] E=3e-139
+isogroup4378	"NADH:ubiquinone oxidoreductase, NDUFS2/49 kDa subunit ; NADH dehydrogenase (ubiquinone) Fe-S protein 2 [EC:1.6.5.3 1.6.99.3] E=1e-59"
+isogroup45335	xeroderma pigmentosum group C-complementing protein E=3e-117
+isogroup4597	discoidin domain receptor family member 1 [EC:2.7.10.1] E=1e-94
+isogroup4623	diacylglycerol O-acyltransferase [EC:2.3.1.20] E=1e-84
+isogroup4664	GPI transamidase complex, GPI17/PIG-S component, involved in glycosylphosphatidylinositol anchor biosynthesis ; programmed cell death 8 (apoptosis-inducing factor) [EC:1.-.-.-] E=1e-09
+isogroup4864	Predicted RNA-binding protein involved in translational regulation
+isogroup501	Deoxyribodipyrimidine photolyase/cryptochrome ; cryptochrome E=2e-148
+isogroup5022	Fructose-biphosphate aldolase ; fructose-bisphosphate aldolase, class I [EC:4.1.2.13] E=1e-78
+isogroup50361	Nucleotide excision repair complex XPC-HR23B, subunit XPC/DPB11 ; xeroderma pigmentosum group C-complementing protein E=6e-54
+isogroup5044	NDR and related serine/threonine kinases ; Rho-associated, coiled-coil containing protein kinase [EC:2.7.11.1] E=6e-49
+isogroup518	Calmodulin and related proteins (EF-Hand superfamily) ; calmodulin E=2e-69
+isogroup5253	spastin [EC:3.6.4.3] E=3e-06
+isogroup526	Uncharacterized conserved protein
+isogroup5462	DNA-directed RNA polymerase subunit E
+isogroup5467	Calmodulin and related proteins (EF-Hand superfamily)
+isogroup5475	Predicted guanine nucleotide exchange factor
+isogroup5554	fyn-related kinase [EC:2.7.10.2] E=8e-37
+isogroup5573	Protoheme ferro-lyase (ferrochelatase) ; ferrochelatase [EC:4.99.1.1] E=6e-74
+isogroup573	Actin-binding cytoskeleton protein, filamin ; filamin E=1e-48
+isogroup5730	Glutathione S-transferase-related protein
+isogroup580	Cytochrome b ; ubiquinol-cytochrome c reductase cytochrome b subunit [EC:1.10.2.2] E=5e-13
+isogroup5865	ATP-dependent Clp protease, proteolytic subunit ; ATP-dependent Clp protease, protease subunit [EC:3.4.21.92] E=8e-46
+isogroup6172	M phase phosphoprotein 6 ; M-phase phosphoprotein 6, animal type E=5e-73
+isogroup6401	Transforming growth factor beta, bone morphogenetic protein and related proteins ; growth differentiation factor 8/11 E=1e-15
+isogroup7013	TPR repeat-containing protein
+isogroup7017	abhydrolase domain-containing protein 1/3 E=3e-08
+isogroup707	Trypsin ; trypsin [EC:3.4.21.4] E=2e-74
+isogroup7141	peptide-methionine (R)-S-oxide reductase [EC:1.8.4.12] E=3e-91
+isogroup7549	Proline oxidase ; hydroxyproline oxidase [EC:1.5.-.-] E=3e-43
+isogroup773	Transcriptional regulator
+isogroup7762	GTP-binding ADP-ribosylation factor Arf1 ; ADP-ribosylation factor 1 E=7e-27
+isogroup81866	Uncharacterized conserved protein
+isogroup8228	GTPase-activating protein Centaurin gamma (contains Ras-like GTPase, PH and ankyrin repeat domains) ; Arf-GAP, GTPase, ANK repeat and PH domain-containing protein 1/2/3 E=6e-158
+isogroup828	Molecular chaperone (DnaJ superfamily) ; DnaJ homolog subfamily B member 5 E=1e-112
+isogroup8405	Uncharacterized Fe-S protein
+isogroup8640	DEAD-box protein abstrakt ; ATP-dependent RNA helicase DDX41 [EC:3.6.4.13] E=9e-129
+isogroup8710	Defense-related protein containing SCP domain ; pathogenesis-related protein 1 E=2e-37
+isogroup878	RNA polymerase II, large subunit
+isogroup889	FOG: RRM domain
+isogroup8925	3-hydroxyacyl-CoA dehydrogenase ; L-gulonate 3-dehydrogenase [EC:1.1.1.45] E=3e-18
+isogroup932	Serine/threonine protein phosphatase 2A, catalytic subunit ; protein phosphatase 1, catalytic subunit [EC:3.1.3.16] E=3e-122
+isogroup952	Cytoskeletal protein Adducin ; L-fuculose-phosphate aldolase [EC:4.1.2.17] E=7e-103
+isogroup9563	glutathione S-transferase [EC:2.5.1.18] E=4e-06
+isogroup9809	Flavohemoprotein b5+b5R ; sulfite oxidase [EC:1.8.3.1] E=4e-10
+isogroup9832	Fibrillins and related proteins containing Ca2+-binding EGF-like domains ; latent transforming growth factor beta binding protein E=7e-75
+isogroup99	FOG: Zn-finger ; early growth response protein 1 E=7e-156

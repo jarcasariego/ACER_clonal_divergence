@@ -1,0 +1,25 @@
+ontology	genes	name	delta.rank	p.adj
+BP	0/267	obsolete electron transport	108	2.36847686397581e-5
+BP	0/33	cofactor metabolic process	256	4.90854132728424e-4
+BP	0/23	cellular macromolecule localization	275	0.00273621341868213
+BP	0/10	pigment metabolic process	452	7.2687656796888e-4
+BP	0/9	porphyrin-containing compound metabolic process	507	2.86030339705247e-4
+BP	0/9	electron transport chain	511	2.86030339705247e-4
+BP	0/7	protein insertion into membrane	657	2.36847686397581e-5
+BP	0/6	heme metabolic process	783	2.64307757225375e-6
+CC	0/17	mitochondrion	90	0.0033898878991998
+CC	0/5	TIM22 mitochondrial import inner membrane insertion complex	159	0.00401761990772516
+CC	0/7	mitochondrial membrane part	232	4.22580508909458e-9
+MF	0/651	oxidoreductase activity	90	1.90575372032231e-4
+MF	0/51	oxidoreductase activity, acting on the CH-CH group of donors	261	0.00332695593139156
+MF	0/80	oxidoreductase activity, acting on NAD(P)H	314	3.39149245139906e-7
+MF	0/31	obsolete stromelysin 3 activity	366	7.18923999169564e-4
+MF	0/33	oxidoreductase activity, acting on NAD(P)H, quinone or similar compound as acceptor	444	4.94654374871329e-6
+MF	0/11	damaged DNA binding	533	0.00671958378638172
+MF	0/28	NADH dehydrogenase activity	536	2.77588087340045e-7
+MF	0/8	oxidoreductase activity, acting on a sulfur group of donors, NAD(P) as acceptor	769	1.90575372032231e-4
+MF	0/7	deoxyribodipyrimidine photo-lyase activity	878	4.91830356176201e-5
+MF	0/7	dTDP-glucose 4,6-dehydratase activity	888	4.12748479941016e-5
+MF	0/6	retinol dehydrogenase activity	1053	4.07008616912715e-6
+MF	0/8	oxidoreductase activity, acting on the CH-CH group of donors, quinone or related compound as acceptor	1183	5.223292994066e-10
+MF	0/5	butyryl-CoA dehydrogenase activity	1266	2.77588087340045e-7
