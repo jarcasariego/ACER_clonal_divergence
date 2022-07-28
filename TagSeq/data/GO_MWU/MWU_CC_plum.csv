@@ -1,0 +1,83 @@
+"delta.rank" "pval" "level" "nseqs" "term" "name" "p.adj"
+0 NA 4 6 "GO:0000015" "phosphopyruvate hydratase complex" NA
+0 NA 4 14 "GO:0000139;GO:0098588" "bounding membrane of organelle" NA
+0 NA 2 207 "GO:0000151;GO:1990234" "transferase complex" NA
+0 NA 4 23 "GO:0000785" "chromatin" NA
+0 NA 4 22 "GO:0000786;GO:0032993;GO:0044815" "nucleosome" NA
+0 NA 2 7 "GO:0000922;GO:0005815" "spindle pole" NA
+0 NA 1 74 "GO:0005576" "extracellular region" NA
+0 NA 2 16 "GO:0005581" "collagen trimer" NA
+0 NA 2 9 "GO:0005643" "nuclear pore" NA
+0 NA 4 8 "GO:0005663" "DNA replication factor C complex" NA
+0 NA 2 18 "GO:0005667" "transcription factor complex" NA
+0 NA 2 5 "GO:0005669" "transcription factor TFIID complex" NA
+0 NA 5 10 "GO:0005677;GO:0090568;GO:0017053" "nuclear transcriptional repressor complex" NA
+0 NA 4 11 "GO:0005694" "chromosome" NA
+0 NA 3 20 "GO:0005732" "small nucleolar ribonucleoprotein complex" NA
+0 NA 3 192 "GO:0005737" "cytoplasm" NA
+0 NA 3 17 "GO:0005739" "mitochondrion" NA
+0 NA 2 38 "GO:0005743;GO:0019866;GO:0031966" "mitochondrial membrane" NA
+0 NA 3 6 "GO:0005762;GO:0000315" "mitochondrial large ribosomal subunit" NA
+0 NA 5 6 "GO:0005763;GO:0000314" "mitochondrial small ribosomal subunit" NA
+0 NA 2 9 "GO:0005764;GO:0000323;GO:0005773" "vacuole" NA
+0 NA 3 26 "GO:0005783" "endoplasmic reticulum" NA
+0 NA 4 10 "GO:0005786;GO:0048500" "signal recognition particle, endoplasmic reticulum targeting" NA
+0 NA -1 7 "GO:0005792" "obsolete microsome" NA
+0 NA 2 8 "GO:0005834;GO:1905360" "heterotrimeric G-protein complex" NA
+0 NA 2 21 "GO:0005839" "proteasome core complex" NA
+0 NA 3 345 "GO:0005840;GO:0043232;GO:1990904;GO:0043228" "ribonucleoprotein complex" NA
+0 NA 3 5 "GO:0005853" "eukaryotic translation elongation factor 1 complex" NA
+0 NA 4 42 "GO:0005856" "cytoskeleton" NA
+0 NA 3 6 "GO:0005862;GO:0044449" "contractile fiber part" NA
+0 NA 3 7 "GO:0005871" "kinesin complex" NA
+0 NA 2 26 "GO:0005874" "microtubule" NA
+0 NA 2 79 "GO:0005875" "microtubule associated complex" NA
+0 NA 2 17 "GO:0005884" "actin filament" NA
+0 NA 3 16 "GO:0005887;GO:0031226" "intrinsic component of plasma membrane" NA
+0 NA 6 6 "GO:0005891;GO:0034704" "calcium channel complex" NA
+0 NA 2 145 "GO:0005952;GO:0005956" "cAMP-dependent protein kinase complex" NA
+0 NA 2 17 "GO:0005954" "calcium- and calmodulin-dependent protein kinase complex" NA
+0 NA 4 23 "GO:0008021;GO:0070382;GO:0097458;GO:0030133;GO:0099503;GO:0031410;GO:0097708;GO:0031982" "cytoplasmic vesicle" NA
+0 NA 6 23 "GO:0008076;GO:0034705" "potassium channel complex" NA
+0 NA 2 29 "GO:0008091;GO:0044448" "cell cortex part" NA
+0 NA 4 6 "GO:0008250" "oligosaccharyltransferase complex" NA
+0 NA 3 55 "GO:0008287;GO:1903293;GO:0005963;GO:0017023" "protein serine/threonine phosphatase complex" NA
+0 NA 3 9 "GO:0008305;GO:0098636;GO:0098802;GO:0043235" "plasma membrane receptor complex" NA
+0 NA 2 7 "GO:0009341" "beta-galactosidase complex" NA
+0 NA 5 9 "GO:0015629" "actin cytoskeleton" NA
+0 NA 4 58 "GO:0015935;GO:0022627" "small ribosomal subunit" NA
+0 NA 3 5 "GO:0016222" "procollagen-proline 4-dioxygenase complex" NA
+0 NA 2 29 "GO:0016459" "myosin complex" NA
+0 NA 2 35 "GO:0016469" "proton-transporting two-sector ATPase complex" NA
+0 NA 2 8 "GO:0017090" "meprin A complex" NA
+0 NA 2 93 "GO:0022625;GO:0015934" "large ribosomal subunit" NA
+0 NA 5 20 "GO:0030125;GO:0030118;GO:0030120;GO:0030117;GO:0044433" "vesicle coat" NA
+0 NA 2 10 "GO:0030173;GO:0031228" "integral component of Golgi membrane" NA
+0 NA 3 25 "GO:0030286" "dynein complex" NA
+0 NA 2 9 "GO:0030532;GO:0120114" "small nuclear ribonucleoprotein complex" NA
+0 NA 2 7 "GO:0031012;GO:0044421" "extracellular matrix" NA
+0 NA 2 52 "GO:0031090" "organelle membrane" NA
+0 NA 3 15 "GO:0031301;GO:0031300" "integral component of organelle membrane" NA
+0 NA 3 32 "GO:0034703;GO:0034702;GO:1902495;GO:1990351" "cation channel complex" NA
+0 NA 2 6 "GO:0042555" "MCM complex" NA
+0 NA 3 6 "GO:0042579;GO:0005777" "microbody" NA
+0 NA 2 5 "GO:0042721;GO:0098800" "TIM22 mitochondrial import inner membrane insertion complex" NA
+0 NA 2 58 "GO:0044427" "chromosomal part" NA
+0 NA 3 53 "GO:0044428" "nuclear part" NA
+0 NA 3 68 "GO:0044429" "mitochondrial part" NA
+0 NA 3 194 "GO:0044430" "cytoskeletal part" NA
+0 NA 3 30 "GO:0044431" "Golgi apparatus part" NA
+0 NA 3 27 "GO:0044432" "endoplasmic reticulum part" NA
+0 NA 4 160 "GO:0044445;GO:0044391" "ribosomal subunit" NA
+0 NA 2 22 "GO:0044451" "nucleoplasm part" NA
+0 NA 2 7 "GO:0044455" "mitochondrial membrane part" NA
+0 NA 1 36 "GO:0044456" "synapse part" NA
+0 NA 2 87 "GO:0044459" "plasma membrane part" NA
+0 NA 4 13 "GO:0045211;GO:0097060;GO:0098590" "postsynaptic membrane" NA
+0 NA 3 11 "GO:0061695" "transferase complex, transferring phosphorus-containing groups" NA
+0 NA 3 9 "GO:0090575;GO:0044798" "nuclear transcription factor complex" NA
+0 NA 2 147 "GO:0098796" "membrane protein complex" NA
+0 NA 2 58 "GO:0098797" "plasma membrane protein complex" NA
+0 NA 2 23 "GO:0098798" "mitochondrial protein complex" NA
+0 NA 3 45 "GO:0099513;GO:0099512;GO:0099081;GO:0099080" "polymeric cytoskeletal fiber" NA
+0 NA 2 10 "GO:1990204" "oxidoreductase complex" NA
