@@ -1,13 +1,14 @@
 .Rproj.user
 .Rhistory
-.RData
-.Ruserdata
-.DS_Store
-.bedgraph
-.vcf
-.bam
-.bed
+*.RData
+*.Ruserdata
+*.DS_Store
+*.bedgraph
+*.vcf
+*.bam
+*.bed
 WGBS/analyses/Genomic_features/*
 WGBS/data/OSF/*
 TagSeq/data/ACER_Transcriptome(Libro_etal_2013)*
+._*
 
