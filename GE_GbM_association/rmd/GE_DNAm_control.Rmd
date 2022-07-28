@@ -1,5 +1,5 @@
 ---
-  title: "GE_DNAm_control"
+title: "GE_DNAm_control"
 author: "Javier Rodriguez Casariego"
 date: "7/28/2022"
 output: html_document
@@ -96,11 +96,7 @@ saveRDS(dge_gene,paste0("data/RNA_gene_preNormalization_DGEListObj.RData"))
 
 
 ```{r}
-# Gene Atribute, Expression and Methylation Summary Table
-
-# Read in the gene level CpG count and summary data.frame
-cpgS <- readRDS("")
-#cpgS <- cpgS[,1:5]
+# Expression and Methylation Summary Table
 
 # load gene reference file - this contains the chromosome and starting gene coordinate (used to 
 # uniquely identify genes in the CpG file) and the gene_id which will be used to merge the expression
@@ -112,7 +108,7 @@ ref <- readRDS("../WGBS/data/gene_GeneLoc.RData")
 gene_dnam <- readRDS("../WGBS/output/meth_dataset.RData")
 m <- data.frame (gene_dnam %>%
                    group_by(Sample.ID, gene) %>%
-                   summarise(mean = mean(per.meth), n = n()) %>%
+                   summarise(mean = mean(per.meth), n = n(), all_cpg) %>%
                    spread(., key = Sample.ID, value = mean))
 
 #filter for a min 3 Cpg per gene
@@ -126,6 +122,8 @@ rownames(m) <- m$gene
 m <- m[,-1]
 m <- as.matrix(m)
 m <- m/100
+
+saveRDS(m, "data/meth_dataset.RData")
 
 ## Create a summary of methylation for each gene ##
 
@@ -165,12 +163,6 @@ e <- e[rownames(e) %in% rownames(S_e),]
 e_cpm_log <- log2(cpm(e)+ 1) # log2 cpm transformation
 e <- e_cpm_log
 
-# Number of exons per gene
-#exons <- read.delim("../DML_analysis/Genomic_features/20210119_CpGbyGene_Summary/20210119_exonInGene_Count.txt",sep="\t",header=FALSE)
-#exon_labels <- paste0(exons$V1,"_",exons$V2,"_",exons$V3)
-# Exon counts and gene lengths
-#exons_rev <- data.frame(label=exon_labels,exon_count=exons$V4,gene_length=exons$V3-exons$V2)
-
 #### Summarize the gene expression data ####
 ## Create a summary of methylation for each CpG ##
 # Mean gene expression all sample3s
@@ -209,9 +201,6 @@ gene_reduce <- data.frame(label=gene_annot$label,gene_annot[,c(9,2:8)])
 # Combine gene expression, exon count and CpG (DNA mehtylation data)
 
 gSum <- left_join(meth_reduce, gene_reduce)
-#gSum <- left_join(cpgS,meth_reduce)
-#gSum <- left_join(gSum,gene_reduce)
-#gSum <- left_join(gSum,exons_rev)
 # Reducing the data.frame to include places were we have all the data.
 gSum_red<-gSum[!is.na(gSum$cov5_count),]
 gSum_red<-gSum_red[!is.na(gSum_red$gene_mean),]
@@ -224,369 +213,126 @@ saveRDS(gSum_red,"data/Multi_geneSummaryReduced.RData")
 ```
 
 ```{r}
-# Read in Gene Expression Matrix
-ge<-readRDS("data/tagseq/RNA_gene_postvsdAndNormalization.RData")
-ge_counts <- assay(ge) # Extract just the counts for samples with DNA meth data
-ge_counts <- as.data.frame(ge_counts)
-ge_counts <- ge_counts[,ID] # filter samples with meth data 
-ge_counts$gene <- rownames(ge_counts)
 
+mat <- readRDS("data/Multi_geneSummaryReduced.RData")
 
-# Read in DNA Methylation Data for Gene Bodys
-dnam <- m
-
-
-#mat <- readRDS("data/Multi_geneSummaryReduced.RData")
-
-mat <- gSum_red
-
-# We have overlapping expression and DNA Methylation data for 476 genes
-#### Subset data by CpG Coverage ####
-
-# 5% CpG coverage within a gene
-mat_5 <-  mat[mat$cov5_count/mat$all_count>=0.05,]
-# 10% CpG coverage within a gene
-mat_10 <-  mat[mat$cov5_count/mat$all_count>=0.1,]
-# 20% CpG coverage within a gene
-mat_20 <-  mat[mat$cov5_count/mat$all_count>=0.2,]
-
-
-#The counts should be log transformed
-hist(log2(mat$exon_count))
-hist(log2(mat$gene_length))
-hist(log2(mat$all_count))
-
-mat_0_control <- subMat_control(mat)
-mat_5_control <- subMat_control(mat_5)
-mat_10_control <- subMat_control(mat_10)
-
-
-## Creates matrix with summary stats for samples from control symb C
-# treatment. This is to look at basic DNA methylation - Gene expression correlations
-mats_list <- list(mat_0_control,mat_5_control,mat_10_control)
-
-# Labels (used later)
-dats <- c("mat","mat_5","mat_10") 
-dats_V2 <- c("No filter","5% filter") 
-namePlot <- c("A","B","C")
-
-#### Gene Attribut PCA ####
-### Control Timepoint (developmental response)
-# We are using log2 transformed and scaled variables (except methylation is not log2 transformed)
-
-
-col <- rgb(1,1,1, alpha = 0)
-# Perform pca 
-prcomp_obj <- list()
-# scree plot list 
-screeplot_obj <- list()
-# pca object 
-pca_obj <- list()
-
-for(i in 1:length(mats_list)){
-  # Perform pca 
-  prcomp_obj[[i]] <- prcomp(scale(mats_list[[i]]))
-  # Scree plot 
-  screeplot_obj[[i]] <- fviz_eig(prcomp_obj[[i]],addlabels = TRUE)
-  ## PCA plot
-  pca_obj[[i]] <- fviz_pca_var(prcomp_obj[[i]],col.circle = col,
-                               title="",axes=c(1,2),
-                               repel = TRUE # Avoid text overlapping
-  ) + 
-    theme_cowplot() +
-    theme(axis.title = element_text(size=15),
-          axis.text = element_text(size=15))
-}
-# Keept all genes due to low coverage
-
-pca_obj[[1]]
-
-pca.res <- prcomp(scale(mats_list[[1]]))
-
-get_pca_var(pca.res)$coord
-
-
-(pPCA_C <- plot_grid(pca_obj[[1]],labels="A"))
-
-pca_obj_PC2and3 <- fviz_pca_var(prcomp_obj[[1]],col.circle = col,
-                                title="",axes=c(1,3),
-                                repel = TRUE # Avoid text overlapping
-) + 
-  theme_cowplot() +
-  theme(axis.title = element_text(size=15),
-        axis.text = element_text(size=15))
-pca_obj_PC2and3
-
-pPCA_alt <- plot_grid(pca_obj[[1]],pca_obj_PC2and3,labels=c("A","B"),nrow=2)
-
-pca_obj_PC2and3_c5 <- fviz_pca_var(prcomp_obj[[2]],col.circle = col,
-                                title="",axes=c(1,3),
-                                repel = TRUE # Avoid text overlapping
-) + 
-  theme_cowplot() +
-  theme(axis.title = element_text(size=15),
-        axis.text = element_text(size=15))
-pca_obj_PC2and3_c5
-
-pPCA_cov5 <- plot_grid(pca_obj[[2]],pca_obj_PC2and3,labels=c("A","B"),nrow=1)
-
-#### Linear correlations between gene expression and DNA methylation ####
-prin_PCA <- princomp(scale(mats_list[[1]]))
-pr_PCA <- prcomp(scale(mats_list[[1]]))
-
-pr_PCA
-get_pca_var(prcomp_obj[[1]])$contrib
-
-## Mean Methylation in our control groups (Day 9) vs Gene Expression
-pL_mean <- list()
-for(i in 1:length(dats)){
-  df <- get(dats[i])
-  df$density <- get_density(df$gene_mean_Dc, df$mean_Dc*100, n = 100)
-  temp <- ggplot(df,aes(x=gene_mean_Dc,y=mean_Dc*100)) + 
+## Mean Methylation vs Gene Expression
+df <- mat
+df$density <- get_density(df$gene_mean_S, df$mean_S*100, n = 100)
+mean_GbMvsGE_shallow <- ggplot(df,aes(x=gene_mean_S,y=mean_S*100)) + 
     geom_point(aes(color = density)) + ylim(0,100) + 
     geom_smooth(method=lm,colour="orange",size=2,na.rm = TRUE) +
     scale_color_viridis() +
     labs(x="Gene Expression (log2-cpm)",y="DNA Methylation (%)") +
     theme_cowplot()
-  pL_mean[[i]]<- temp
-}
+df$density <- get_density(df$gene_mean_D, df$mean_D*100, n = 100)
+mean_GbMvsGE_deep <- ggplot(df,aes(x=gene_mean_D,y=mean_D*100)) + 
+    geom_point(aes(color = density)) + ylim(0,100) + 
+    geom_smooth(method=lm,colour="orange",size=2,na.rm = TRUE) +
+    scale_color_viridis() +
+    labs(x="Gene Expression (log2-cpm)",y="DNA Methylation (%)") +
+    theme_cowplot()
 
-## Mean Methylation in our control groups (Day 9) vs Gene Expression CV (log)
-pL_cv <- list()
-for(i in 1:length(dats)){
-  df <- get(dats[i])
-  df$density <- get_density(log(df$gene_cv_Cc), df$mean_Cc*100, n = 100)
-  temp <- ggplot(df,aes(log(x=gene_cv_Cc),y=mean_Cc*100)) + 
+## Mean Methylation vs Gene Expression CV (log)
+df$density <- get_density(log(df$gene_cv_S), df$mean_S*100, n = 100)
+meanGbMvsGEcv_shallow <- ggplot(df,aes(log(x=gene_cv_S),y=mean_S*100)) + 
     geom_point(aes(color = density)) + ylim(0,100) + scale_color_viridis() +
     geom_smooth(method=lm,colour="orange",size=2) +
     labs(x=bquote("Gene Expression"~CV[Ind]~"(log)"),y="DNA Methylation (%)") +
     theme_cowplot()
-  pL_cv[[i]]<- temp
-}
+df$density <- get_density(log(df$gene_cv_D+0.01), df$mean_D*100, n = 100)
+meanGbMvsGEcv_deep <- ggplot(df,aes(log(x=gene_cv_D+0.01),y=mean_D*100)) + 
+    geom_point(aes(color = density)) + ylim(0,100) + scale_color_viridis() +
+    geom_smooth(method=lm,colour="orange",size=2) +
+    labs(x=bquote("Gene Expression"~CV[Ind]~"(log)"),y="DNA Methylation (%)") +
+    theme_cowplot()
 
-right_alt <- plot_grid(pL_mean[[1]], pL_cv[[1]], labels=c("C", "D"),ncol=1)
+
+shallow_plots <- plot_grid(mean_GbMvsGE_shallow, meanGbMvsGEcv_shallow, labels=c("A", "B"),ncol=1)
+deep_plots <- plot_grid(mean_GbMvsGE_deep, meanGbMvsGEcv_deep, labels=c("C", "D"),ncol=1)
 
 ### Figure 5 ###
-fig5 <- plot_grid(pPCA_alt,right_alt)
+fig <- plot_grid(shallow_plots, deep_plots)
 #ggsave(fig5,filename="results/figures/Figure5/Figure5.pdf")
-ggsave(fig5,filename="output/fig.8.png", height = 7, width = 9)
+ggsave(fig,filename="output/GbM_GE_correlation.png", height = 7, width = 9)
 
 ### Statistics ###
 # Linear model with Mean gene DNA methylation as predictor 
 # and Mean gene expression or CV as response  
 
 # Mean Methylation vs. Mean Gene Expression
-(cpg_ge <- summary(lm(mat$gene_mean~mat$mean_Cc)))
+(cpg_ge <- summary(lm(mat$gene_mean~mat$mean)))
 # Mean Methylation vs. CV Gene Expression
-(cpg_cv <- summary(lm(mat$gene_cv_Cc~mat$mean_Cc)))
+(cpg_cv <- summary(lm(mat$gene_cv_S~mat$mean_S)))
 
 # Number of genes included
-length(mat$mean_Cc)
+length(mat$mean_S)
 
-#### Supplemental Plots for figure 5 ####
-
-## Percent CpG cover within genes X number of genes ##
-# Lets check out different filtering levels based on % CpGs covered in a gene
-covRange <- data.frame(Percent_Coverage=seq(0,100,5),
-                       NumGenes=sapply(seq(0,100,5),perCentCpGCoverage))
-# Plot shows number of genes in dataset vs. % CpGs covered within the gene
-coverage_fig <- ggplot(covRange,aes(y=NumGenes,x=Percent_Coverage,colour=viridis(1))) +
-  geom_vline(xintercept = 5,colour="purple",size=2) + 
-  geom_line(colour="black") + geom_point(size=5) + 
-  theme_cowplot() + 
-  labs(x="Percent Coverage",y="Number of Genes",
-       title="Within Gene CpG Coverage") +
-  theme(legend.position = "none",
-        plot.title = element_text(hjust = 0.5))
-coverage_fig
-#ggsave(plot_grid(coverage_fig),filename="results/figures/Figure5/supp_Fig5_CpGByGeneCoverage.pdf")
-ggsave(coverage_fig,filename="output/supp_Fig_CpGByGeneCoverage.png")
-
-## Additional PCA figures
-suppPCA_fig_list <- list()
-for(i in 1:length(pca_obj)){
-  suppPCA_fig_list[[i]] <- plot_grid(pca_obj[[i]],labels=c(namePlot[i]),nrow = 1)
-}
-
-suppPCA_fig_rows <- list()
-for(i in 1:length(dats_V2)){
-  temp <- textGrob(dats_V2[i],
-                   gp=gpar(col="black",
-                           fontsize=15))
-  suppPCA_fig_rows[[i]] <-grid.arrange(arrangeGrob(suppPCA_fig_list[[i]],top = temp))
-}
-suppPCA_final <- plot_grid(plotlist = suppPCA_fig_rows,nrow=1)
-#ggsave(suppPCA_final,filename="results/figures/Figure5/supp_Fig5_PCAsupp.pdf")
-ggsave(suppPCA_final,filename="output/supp_Fig_PCAsupp.png", height = 4, width = 7)
-
-
-## PC axes % contribution figure ##
-#Contribution plot list for different coverage thresholds
-
-
-contribute_fig_list <- list()
-
-for(i in 1:length(prcomp_obj)){
-  temp <- suppContriFig(prcomp_obj[[1]]) 
-  contribute_fig_list[[i]] <- plot_grid(plotlist =temp,labels=c(namePlot[i]),nrow = 1)
-}
-
-contribute_fig_rows <- list()
-for(i in 1:length(dats_V2)){
-  temp <- textGrob(dats_V2[i],
-                   gp=gpar(col="black",
-                           fontsize=15))
-  contribute_fig_rows[[i]] <-grid.arrange(arrangeGrob(contribute_fig_list[[i]],top = temp))
-}
-contribute_final <- plot_grid(plotlist = contribute_fig_rows,nrow=length(dats_V2))
-#ggsave(contribute_final,filename="results/figures/Figure5/supp_Fig5_PCAAttContr.pdf")
-ggsave(contribute_final,filename="output/supp_Fig_PCAAttContr.png", height = 7, width = 10)
-
-## Gene Expression
-plot_grid(plotlist=pL_mean,labels = namePlot)
-## CV
-plot_grid(plotlist=pL_cv,labels = namePlot)
 ```
 
 Differential methylation/gene expression correlation
 
 ```{r}
 # prepare DMGs to filter DM/GE data
-DMG_sym <- read.delim("../DMG_analysis/output/Sym_DMG_annot.tsv", sep = "\t")
-DMG_trt <- read.delim("../DMG_analysis/output/heat_DMG_annot.tsv", sep = "\t")
-DMG_sym_trt <- read.delim("../DMG_analysis/output/SymXtrt2_DMG_annot.tsv", sep = "\t")
-
-DMG_Heated <- read.delim("../DMG_analysis/output/Ch_Dh_DMG_annot.tsv", sep = "\t")
-DMG_Ctrol <- read.delim("../DMG_analysis/output/Cc_DC_DMG_annot.tsv", sep = "\t")
-DMG_SymbC <- read.delim("../DMG_analysis/output/Cc_Ch_DMG_annot.tsv", sep = "\t")
-DMG_SymbD <- read.delim("../DMG_analysis/output/Dc_Dh_DMG_annot.tsv", sep = "\t")
+DMG <- read.delim("../WGBS/output/Table_S1_DMG_annot.tsv", sep = "\t")
 
 #keep only gene_id, scaffold, start and end
-DMG_sym <- DMG_sym[, c(1,18:20)]
-colnames(DMG_sym) <- c("gene_id","scaffold","start","stop")
-DMG_sym$label <- paste0(DMG_sym$scaffold,"_",DMG_sym$start,"_",DMG_sym$stop)
-DMG_trt <- DMG_trt[, c(1,18:20)]
-colnames(DMG_trt) <- c("gene_id","scaffold","start","stop")
-DMG_trt$label <- paste0(DMG_trt$scaffold,"_",DMG_trt$start,"_",DMG_trt$stop)
-DMG_sym_trt <- DMG_sym_trt[, c(1,18:20)]
-colnames(DMG_sym_trt) <- c("gene_id","scaffold","start","stop")
-DMG_sym_trt$label <- paste0(DMG_sym_trt$scaffold,"_",DMG_sym_trt$start,"_",DMG_sym_trt$stop)
-DMG_Heated <- DMG_Heated[, c(1,18:20)]
-colnames(DMG_Heated) <- c("gene_id","scaffold","start","stop")
-DMG_Heated$label <- paste0(DMG_Heated$scaffold,"_",DMG_Heated$start,"_",DMG_Heated$stop)
-DMG_Ctrol <- DMG_Ctrol[, c(1,18:20)]
-colnames(DMG_Ctrol) <- c("gene_id","scaffold","start","stop")
-DMG_Ctrol$label <- paste0(DMG_Ctrol$scaffold,"_",DMG_Ctrol$start,"_",DMG_Ctrol$stop)
-DMG_SymbC <- DMG_SymbC[, c(1,18:20)]
-colnames(DMG_SymbC) <- c("gene_id","scaffold","start","stop")
-DMG_SymbC$label <- paste0(DMG_SymbC$scaffold,"_",DMG_SymbC$start,"_",DMG_SymbC$stop)
-DMG_SymbD <- DMG_SymbD[, c(1,18:20)]
-colnames(DMG_SymbD) <- c("gene_id","scaffold","start","stop")
-DMG_SymbD$label <- paste0(DMG_SymbD$scaffold,"_",DMG_SymbD$start,"_",DMG_SymbD$stop)
+DMG<- DMG[, c(1,7:9)]
+colnames(DMG) <- c("gene_id","scaffold","start","stop")
+DMG$label <- paste0(DMG$scaffold,"_",DMG$start,"_",DMG$stop)
+
 
 #Subset DM/GE dataset
-mat_red <- subset(mat,select=c("label","diff_Trt","diff_Symb","diff_SymbC_Trt","diff_SymbD_Trt",
-                          "diff_Ctrol_Symb","diff_Heated_Symb","gene_diff_Trt","gene_diff_Symb",
-                          "gene_diff_SymbC_Trt","gene_diff_SymbD_Trt","gene_diff_Ctrol_Symb",
-                          "gene_diff_Heated_Symb","gene_cv_Cc","gene_cv_Ch","gene_cv_Dc","gene_cv_Dh"))
-mat_red[,2:9] <- mat_red[,2:9]*100 
+mat_red <- subset(mat,select=c("gene_id","diff_Trt","gene_diff_Trt","gene_cv_S","gene_cv_D"))
+mat_red[,2] <- mat_red[,2]*100 
 
-DMG_sym_join <- left_join(DMG_sym,mat_red,by="label")
-DMG_sym_join <- DMG_sym_join[complete.cases(DMG_sym_join),] #eliminate genes for which no GE data is available
-DMG_trt_join <- left_join(DMG_trt,mat_red,by="label")
-DMG_trt_join <- DMG_trt_join[complete.cases(DMG_trt_join),] #eliminate genes for which no GE data is available
-DMG_sym_trt_join <- left_join(DMG_sym_trt,mat_red,by="label")
-DMG_sym_trt_join <- DMG_sym_trt_join[complete.cases(DMG_sym_trt_join),] #eliminate genes for which no GE data is available
-DMG_Ctrol_join <- left_join(DMG_Ctrol,mat_red,by="label")
-DMG_Ctrol_join <- DMG_Ctrol_join[complete.cases(DMG_Ctrol_join),] #eliminate genes for which no GE data is available
-DMG_Heated_join <- left_join(DMG_Heated,mat_red,by="label")
-DMG_Heated_join <- DMG_Heated_join[complete.cases(DMG_Heated_join),] #eliminate genes for which no GE data is available
-DMG_SymbC_join <- left_join(DMG_SymbC,mat_red,by="label")
-DMG_SymbC_join <- DMG_SymbC_join[complete.cases(DMG_SymbC_join),] #eliminate genes for which no GE data is available
-DMG_SymbD_join <- left_join(DMG_SymbD,mat_red,by="label")
-DMG_SymbD_join <- DMG_SymbD_join[complete.cases(DMG_SymbD_join),] #eliminate genes for which no GE data is available
+DMG_join <- left_join(DMG,mat_red,by="gene_id")
+DMG_join <- DMG_join[complete.cases(DMG_join),] #eliminate genes for which no GE data is available
+
 
 #Create a diff_cv variable for all contrasts 
-DMG_Ctrol_join$diff.cv <- c(DMG_Ctrol_join$gene_cv_Dc-DMG_Ctrol_join$gene_cv_Cc)
-DMG_Ctrol_join$methylDirection <- ifelse(DMG_Ctrol_join$diff_Ctrol_Symb < 0,
+DMG_join$diff.cv <- c(DMG_join$gene_cv_S-DMG_join$gene_cv_D)
+DMG_join$methylDirection <- ifelse(DMG_join$diff_Trt < 0,
                                       "Hypomethylation",
                                       "Hypermethylation")
-DMG_Heated_join$diff.cv <- c(DMG_Heated_join$gene_cv_Dc-DMG_Heated_join$gene_cv_Cc)
-DMG_Heated_join$methylDirection <- ifelse(DMG_Heated_join$diff_Heated_Symb < 0,
-                                      "Hypomethylation",
-                                      "Hypermethylation")
-DMG_SymbC_join$diff.cv <- c(DMG_SymbC_join$gene_cv_Dc-DMG_SymbC_join$gene_cv_Cc)
-DMG_SymbC_join$methylDirection <- ifelse(DMG_SymbC_join$diff_SymbC_Trt < 0,
-                                      "Hypomethylation",
-                                      "Hypermethylation")
-DMG_SymbD_join$diff.cv <- c(DMG_SymbD_join$gene_cv_Dc-DMG_SymbD_join$gene_cv_Cc)
-DMG_SymbD_join$methylDirection <- ifelse(DMG_SymbD_join$diff_SymbD_Trt < 0,
-                                      "Hypomethylation",
-                                      "Hypermethylation")
-
 
 ```
 
 ```{r Plot GE vs meth diff}
 #### Gene Expression vs. DMG change ####
-p1<-ggplot(DMG_Ctrol_join,
-           aes(x=diff_Ctrol_Symb,y=gene_diff_Ctrol_Symb,colour=methylDirection)) + 
+p1<-ggplot(DMG_join,
+           aes(x=diff_Trt,y=gene_diff_Trt,colour=methylDirection)) + 
   geom_smooth(method=lm,colour="orange",size=2,na.rm = TRUE) +
-  geom_point(size=3) + ylim(-5,5) + xlim(-20,20) +  
-  theme_cowplot() + scale_color_manual(values=pal[c(3,1)]) +
-  labs(y=bquote("Gene expression (FoldChange"~Log[2]~")"),x="Methylation change in DMGs (fraction difference)",title="Dc.vs.Cc") +
-  theme(plot.title = element_text(hjust=0.5))
-p1_nolab <- p1 + theme(axis.title = element_blank(),
-                       legend.position = "none")
-p1_nolab
+  geom_point(size=3) + ylim(-2.5,2.5) + xlim(-11,11) +  
+  theme_cowplot() +
+  labs(y=bquote("Gene expression (FoldChange"~Log[2]~")"),x="Methylation change in DMGs (fraction difference)") +
+  theme(plot.title = element_text(hjust=0.5), legend.position = "none")
 
-p2<-ggplot(DMG_Heated_join,
-           aes(x=diff_Heated_Symb,y=gene_diff_Heated_Symb,colour=methylDirection)) + 
+p1
+
+p2<-ggplot(DMG_join,
+           aes(x=diff_Trt,y=diff.cv,colour=methylDirection)) + 
   geom_smooth(method=lm,colour="orange",size=2,na.rm = TRUE) +
-  geom_point(size=3) + ylim(-5,5) + xlim(-20,20) +
-  theme_cowplot() + scale_color_manual(values=pal[c(3,1)]) +
-  labs(y=bquote("Gene expression (FoldChange"~Log[2]~")"),x="Methylation change in DMGs (fraction difference)",title="Dh.vs.Ch") +
-  theme(plot.title = element_text(hjust=0.5))
-p2_nolab <- p2 + theme(axis.title = element_blank(),
-                       legend.position = "none")
-p2_nolab
+  geom_point(size=3) + ylim(-4,4) + xlim(-11,11) +  
+  theme_cowplot() +
+  labs(y=bquote("Gene Expression"~CV[ind]~"difference"),x="Methylation change in DMGs (fraction difference)") +
+  theme(plot.title = element_text(hjust=0.5), legend.position = "none")
 
-p3<-ggplot(DMG_SymbC_join,
-           aes(x=diff_SymbC_Trt,y=gene_diff_SymbC_Trt,colour=methylDirection)) + 
-  geom_smooth(method=lm,colour="orange",size=2,na.rm = TRUE) +
-  geom_point(size=3) + ylim(-5,5) + #ylim(-1.1,1.1) + 
-  theme_cowplot() + scale_color_manual(values=pal[c(3,1)]) +
-  labs(y=bquote("Gene expression (FoldChange"~Log[2]~")"),x="Methylation change in DMGs (fraction difference)",title="Ch.vs.Cc") + xlim(-20,20) + 
-  theme(plot.title = element_text(hjust=0.5))
-p3_nolab <- p3 + theme(axis.title = element_blank(),
-                       legend.position = "none")
-p3_nolab
+p2
 
-p4<-ggplot(DMG_SymbD_join,
-           aes(x=diff_SymbD_Trt,y=gene_diff_SymbD_Trt,colour=methylDirection)) + 
-  geom_smooth(method=lm,colour="orange",size=2,na.rm = TRUE) +
-  geom_point(size=3) + ylim(-5,5) + xlim(-20,20) + 
-  theme_cowplot() + scale_color_manual(values=pal[c(3,1)]) +
-  labs(y=bquote("Gene expression (FoldChange"~Log[2]~")"),x="Methylation change in DMGs (fraction difference)",title="Ch.vs.Cc") +
-  theme(plot.title = element_text(hjust=0.5))
-p4_nolab <- p4 + theme(axis.title = element_blank(),
-                       legend.position = "none")
-p4_nolab 
-
+fig <- plot_grid(p1, p2)
+ggsave(fig,filename="output/DMG_GE_correlation.png", height = 4, width = 9)
 ```
 
 ```{r}
 ## Statistical Model ##
+# DMG Methylation diff vs. Mean diff Gene Expression
+(dmg_ge <- summary(lm(DMG_join$gene_diff_Trt~DMG_join$diff_Trt)))
+# DMG Methylation diff vs. CV diff Gene Expression
+(dmg_cv <- summary(lm(DMG_join$diff.cv~DMG_join$diff_Trt)))
 
-plot(lm(DMG_Ctrol_join$gene_diff_Ctrol_Symb~DMG_Ctrol_join$diff_Ctrol_Symb))
-plot(lm(DMG_Heated_join$gene_diff_Heated_Symb~DMG_Heated_join$diff_Heated_Symb))
-plot(lm(DMG_SymbC_join$gene_diff_SymbC_Trt~DMG_SymbC_join$diff_SymbC_Trt))
-plot(lm(DMG_SymbD_join$gene_diff_SymbD_Trt~DMG_SymbD_join$diff_SymbD_Trt))
-
-summary(lm(DMG_Ctrol_join$gene_diff_Ctrol_Symb~DMG_Ctrol_join$diff_Ctrol_Symb))
-summary(lm(DMG_Heated_join$gene_diff_Heated_Symb~DMG_Heated_join$diff_Heated_Symb))
-summary(lm(DMG_SymbC_join$gene_diff_SymbC_Trt~DMG_SymbC_join$diff_SymbC_Trt))
-summary(lm(DMG_SymbD_join$gene_diff_SymbD_Trt~DMG_SymbD_join$diff_SymbD_Trt))
+plot(lm(DMG_join$gene_diff_Trt~DMG_join$diff_Trt))
+plot(lm(DMG_join$diff.cv~DMG_join$diff_Trt))
 
 ```
 

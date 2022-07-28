@@ -167,7 +167,7 @@ ggsave(countfig, filename = "output/Fig_read_counts.png", device = "png", width 
 
 # Normalize expression data for visualization purposes using VST tranformation
 vsd <- vst(dds, blind = TRUE)
-
+saveRDS(vsd, "output/RNA_gene_postvsdAndNormalization.RData")
 # Check for outliers
 e=ExpressionSet(assay(vsd), AnnotatedDataFrame(as.data.frame(colData(vsd))))
 setwd('/Volumes/JARC_2T/Data_PhD/Rapid_Project/Clonal_divergence/ACER_clonal_divergence/TagSeq/output')
