@@ -1,0 +1,6 @@
+term	delta.rank	padj
+Inorganic ion transport and metabolism	-465	0.00363
+Translation, ribosomal structure and biogenesis	522	0.0313
+Intracellular trafficking, secretion, and vesicular transport	359	0.0313
+Cell motility	1137	0.0637
+Amino acid transport and metabolism	-336	0.0955

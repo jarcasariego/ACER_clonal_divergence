@@ -1,0 +1,109 @@
+#!/bin/bash
+#SBATCH --qos normal
+#SBATCH --account=acc_jeirinlo
+#SBATCH --partition default-partition
+
+# Number of nodes
+#SBATCH -N 1
+
+# Number of tasks
+#SBATCH -n 16
+
+#SBATCH --output=log_methylpy
+
+##########################################################
+# Setup envrionmental variable. 
+##########################################################
+export OMP_NUM_THREADS=$SLURM_CPUS_ON_NODE
+. $MODULESHOME/../global/profile.modules
+module load miniconda3-4.5.11-gcc-8.2.0-oqs2mbg
+pwd; hostname; date
+ 
+echo "Running program on $SLURM_CPUS_ON_NODE CPU cores"
+
+##########################################################
+
+
+source activate methylpy
+
+#############################################################
+#### run DMRfind for depth comparison with 100 bp windowns ##
+#############################################################
+
+methylpy DMRfind \
+--allc-files \
+N11_D_10xmerg_allc.tsv \
+N11_S_10xmerg_allc.tsv \
+N12_D_10xmerg_allc.tsv \
+N12_S_10xmerg_allc.tsv \
+N35_D_10xmerg_allc.tsv \
+N35_S_10xmerg_allc.tsv \
+N36_D_10xmerg_allc.tsv \
+N36_S_10xmerg_allc.tsv \
+N43_D_10xmerg_allc.tsv \
+N43_S_10xmerg_allc.tsv \
+N45_D_10xmerg_allc.tsv \
+N45_S_10xmerg_allc.tsv \
+N66_D_10xmerg_allc.tsv \
+N66_S_10xmerg_allc.tsv \
+N68_D_10xmerg_allc.tsv \
+N68_S_10xmerg_allc.tsv \
+N85_D_10xmerg_allc.tsv \
+N85_S_10xmerg_allc.tsv \
+N86_D_10xmerg_allc.tsv \
+N86_S_10xmerg_allc.tsv \
+N90_D_10xmerg_allc.tsv \
+N90_S_10xmerg_allc.tsv \
+V41_D_10xmerg_allc.tsv \
+V41_S_10xmerg_allc.tsv \
+V57_D_10xmerg_allc.tsv \
+V57_S_10xmerg_allc.tsv \
+--samples N11_D N11_S N12_D N12_S N35_D N35_S N36_D N36_S N43_D N43_S N45_D N45_S N66_D N66_S N68_D N68_S N85_D N85_S N86_D N86_S N90_D N90_S V41_D V41_S V57_D V57_S \
+--mc-type "CGN" \
+--sample-category *_S *_D
+--num-procs 16 \
+--output-prefix ByDepths_DMR100bp_cov10x \
+--dmr-max-dist 100 \
+--min-num-dms 3 
+
+
+#############################################################
+#### run DMRfind for depth comparison with 250 bp windowns ##
+#############################################################
+
+methylpy DMRfind \
+--allc-files \
+N11_D_10xmerg_allc.tsv \
+N11_S_10xmerg_allc.tsv \
+N12_D_10xmerg_allc.tsv \
+N12_S_10xmerg_allc.tsv \
+N35_D_10xmerg_allc.tsv \
+N35_S_10xmerg_allc.tsv \
+N36_D_10xmerg_allc.tsv \
+N36_S_10xmerg_allc.tsv \
+N43_D_10xmerg_allc.tsv \
+N43_S_10xmerg_allc.tsv \
+N45_D_10xmerg_allc.tsv \
+N45_S_10xmerg_allc.tsv \
+N66_D_10xmerg_allc.tsv \
+N66_S_10xmerg_allc.tsv \
+N68_D_10xmerg_allc.tsv \
+N68_S_10xmerg_allc.tsv \
+N85_D_10xmerg_allc.tsv \
+N85_S_10xmerg_allc.tsv \
+N86_D_10xmerg_allc.tsv \
+N86_S_10xmerg_allc.tsv \
+N90_D_10xmerg_allc.tsv \
+N90_S_10xmerg_allc.tsv \
+V41_D_10xmerg_allc.tsv \
+V41_S_10xmerg_allc.tsv \
+V57_D_10xmerg_allc.tsv \
+V57_S_10xmerg_allc.tsv \
+--samples N11_D N11_S N12_D N12_S N35_D N35_S N36_D N36_S N43_D N43_S N45_D N45_S N66_D N66_S N68_D N68_S N85_D N85_S N86_D N86_S N90_D N90_S V41_D V41_S V57_D V57_S \
+--mc-type "CGN" \
+--num-procs 16 \
+--output-prefix AllDepths_DMR250bp_cov10x \
+--dmr-max-dist 250 \
+--min-num-dms 3 
+
+

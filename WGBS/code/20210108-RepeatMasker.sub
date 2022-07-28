@@ -1,0 +1,52 @@
+#!/bin/bash
+#SBATCH --qos normal
+#SBATCH --account=acc_jeirinlo
+#SBATCH --partition default-partition
+
+# Number of nodes
+#SBATCH -N 1
+
+# Number of tasks
+#SBATCH -n 8
+
+#SBATCH --output=log_RMasker
+
+##########################################################
+# Setup envrionmental variable. 
+##########################################################
+export OMP_NUM_THREADS=$SLURM_CPUS_ON_NODE
+. $MODULESHOME/../global/profile.modules
+module load miniconda3-4.5.11-gcc-8.2.0-oqs2mbg
+pwd; hostname; date
+ 
+echo "Running program on $SLURM_CPUS_ON_NODE CPU cores"
+
+##########################################################
+
+# FastA URL
+fasta="/scratch/jeirinlo/jrodr979/Clonal_divergence_paper/genome/acer_genome.fasta"
+
+# Run RepeatMasker
+
+source activate my_anaconda
+
+echo ""
+echo "Running RepeatMasker. This may take awhile."
+echo ""
+RepeatMasker \
+"${fasta}" \
+-species "all" \
+-par ${SLURM_CPUS_ON_NODE} \
+-gff \
+-excln \
+1> stdout.txt \
+2> stderr.txt
+echo "All done! Check stderr.txt for any problems."
+
+conda deactivate
+
+
+
+
+
+

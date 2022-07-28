@@ -1,0 +1,30 @@
+#!/bin/bash
+#SBATCH --qos pq_jeirinlo
+#SBATCH --account=iacc_jeirinlo
+#SBATCH --partition IB_44C_512G
+
+# Number of nodes
+#SBATCH -N 1
+
+# Number of tasks
+#SBATCH -n 2
+
+
+##########################################################
+# Setup envrionmental variable. 
+##########################################################
+export OMP_NUM_THREADS=$SLURM_CPUS_ON_NODE
+. $MODULESHOME/../global/profile.modules
+module load miniconda3-4.5.11-gcc-8.2.0-oqs2mbg
+pwd; hostname; date
+ 
+echo "Running program on $SLURM_CPUS_ON_NODE CPU cores"
+
+##########################################################
+
+
+source activate py37
+
+./tabulate_tsvs.py cov_files/*.cov -k 0 1 -c 4 5 -v > compiled_coverage.pre-filt.meth_unmeth.tsv 
+
+conda deactivate

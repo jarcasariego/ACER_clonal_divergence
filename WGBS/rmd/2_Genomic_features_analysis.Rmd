@@ -1,0 +1,161 @@
+---
+title: "Features_methCpGs_MI"
+author: "Javier Rodriguez Casariego"
+date: "1/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '/Volumes/JARC_2T/Data_PhD/Rapid_Project/Clonal_divergence/ACER_clonal_divergence/WGBS')
+```
+
+load libraries
+```{r}
+library(data.table)
+library(gplots)
+library(ggplot2) #install.packages('ggplot2')
+library(dplyr)
+library(broom)
+library(RColorBrewer)
+library(egg) #install.packages('egg')
+library(purrr)
+library(nlme)
+library(vegan)
+library(Epi) #install.packages('Epi')
+```
+
+read in features for general characterization first
+```{r}
+# read in features that covered regions (background 5x) overlap with
+meth_islands <- fread("analyses/Genomic_features/2021-03-16-Methylation-Island_features.txt", header = FALSE, sep = "\t", stringsAsFactors = FALSE)
+all_5x_feat <- fread("analyses/Genomic_features/2021-02-16-All-5x-CpGs_features.txt", header = FALSE, sep = "\t", stringsAsFactors = FALSE)
+meth_feat <- fread("analyses/Genomic_features/2021-02-16-All-5x-CpGs-Loci-Methylated_features.txt", header = FALSE, sep = "\t", stringsAsFactors = FALSE)
+spar_meth_feat <- fread("analyses/Genomic_features/2021-02-16-All-5x-CpGs-Loci-Sparsely-Methylated_features.txt", header = FALSE,sep = "\t", stringsAsFactors = FALSE)
+unmeth_feat <- fread("analyses/Genomic_features/2021-02-16-All-5x-CpGs-Loci-Unmethylated_features.txt", header = FALSE, sep = "\t", stringsAsFactors = FALSE)
+
+# retain only the comparison, the genome coordinates of the feature, and the feature
+meth_islands <- meth_islands[,-c(1:3)]
+all_5x_feat <- all_5x_feat[,-c(1:3)]
+meth_feat <- meth_feat [,-c(1:3)]
+spar_meth_feat <- spar_meth_feat [,-c(1:3)]
+unmeth_feat <- unmeth_feat[,-c(1:3)]
+
+meth_islands$comparison <- "MI"
+all_5x_feat$comparison <- "all_5x_CpG" 
+meth_feat$comparison <- "methylated"
+spar_meth_feat$comparison <- "sparsely_methylated"
+unmeth_feat$comparison <- "unmethylated"
+
+feat <- rbind(all_5x_feat,meth_feat,spar_meth_feat,unmeth_feat, meth_islands)
+colnames(feat) <- c("scaffold", "start", "end", "feature","comparison")
+feat <- feat[,c(5,1:4)]
+feat$feature <- gsub("put_promoter", "putative.promoter",feat$feature)
+feat$feature <- gsub("similarity", "repeat.region",feat$feature)
+feat$feature <- factor(feat$feature, levels = c("intergenic", "repeat.region", "putative.promoter", "CDS", "intron", "3prime_UTR", "tRNA"))
+levels(feat$feature)
+
+feat_reduced <- feat[feat$comparison==c("all_5x_CpG","methylated"),]  #only maintain All.CpGs and Methylated
+feat_reduced2 <- feat[feat$comparison==c("methylated", "MI"),]  #only maintain All.Methylated and MI
+
+#plot
+jpeg("output/general_genom_feat_stacked_barplot.jpg", width = 4, height = 3, units = "in", res =300)
+ggplot(feat_reduced,aes(x = comparison, y = ..count.., fill = factor(feature), group = feature)) + geom_bar(position = "fill", color = "black") + scale_y_continuous(labels=scales::percent) + ylab("% of total regions") + theme_bw() + theme(axis.text.x = element_text(size = 7, angle = 60, hjust = 1), axis.title = element_text(size = 12, face = "bold")) + scale_fill_manual("Feature",values = RColorBrewer::brewer.pal(9,"BuGn"))
+dev.off()
+
+#plot
+jpeg("output/MI_feat_stacked_barplot.jpg", width = 4, height = 3, units = "in", res =300)
+ggplot(feat_reduced2,aes(x = comparison, y = ..count.., fill = factor(feature), group = feature)) + geom_bar(position = "fill", color = "black") + scale_y_continuous(labels=scales::percent) + ylab("% of total regions") + theme_bw() + theme(axis.text.x = element_text(size = 7, angle = 60, hjust = 1), axis.title = element_text(size = 12, face = "bold")) + scale_fill_manual("Feature",values = RColorBrewer::brewer.pal(9,"Oranges"))
+dev.off()
+
+```
+# Run Chi square test on feature proportions
+```{r}
+# create table with feature totals for methylated
+all.meth_feat_summary <- data.frame(table(meth_feat$V7))
+#rename columns
+colnames(all.meth_feat_summary) <- c("feature", "numMeth")
+ 
+# create table with feature totals for background regions
+all.CpG_feat_summary <- data.frame(table(all_5x_feat$V7))
+#rename columns
+colnames(all.CpG_feat_summary) <- c("feature", "numAll")
+#merge background and DML feature totals 
+feat_summ <- merge(all.meth_feat_summary, all.CpG_feat_summary, by = "feature", all = TRUE)
+#replace NAs with 0
+feat_summ[is.na(feat_summ)] <- 0
+#create variables for the sum of all meth and background features
+feat_meth_total <- sum(feat_summ$numMeth)
+feat_region_total <- sum(feat_summ$numAll)
+#create a table with Chi stats for each feature
+chi_table <- data.frame() #create empty df
+for(i in 1:nrow(feat_summ)){ #loop through each feature
+  numBKGDReg <-feat_summ$numAll[i] # variable for number of background regions for specific feature
+  numMethreg <- feat_summ$numMeth[i] # variable for number of DMLs for specific feature
+  totMeth <- (feat_meth_total - numMethreg) # variable for total number background regions in all features minus the number of background regions for specific feature
+  totBKGD <- (feat_region_total - numBKGDReg)  # variable for total number DMLs in all features minus the number of DMLs for specific feature
+  ct <- matrix(c(numBKGDReg,numMethreg,totBKGD,totMeth), ncol = 2) # create contingency table
+  colnames(ct) <- c(as.character(feat_summ$feature[i]),paste0("Not",feat_summ$feature[i])) #label columns of contingency table
+  rownames(ct) <- c("Region", "DML") #lab rows of contingency table
+  print(ct)
+  x <-  data.frame(broom::tidy(prop.test(ct, correct = FALSE))) # create data frame storing the Chi sq stats results
+  x$feature <- as.character(feat_summ$feature[i]) # add feature name to chi sq df
+  FE <- fisher.test(ct)
+  x$FE.pvalue <- FE$p.value
+  chi_table <- rbind(chi_table,x) #add chi sq stats to master table
+}
+
+
+#adjust chi pvalues
+chi_table$p.adj <- p.adjust(chi_table$p.value, method = "fdr")
+#merge chi table with region counts
+chi_table <- merge(feat_summ,chi_table, by = "feature")
+all_chi_table <- chi_table
+all_chi_table$comparison <- "allCpg_vs_Meth"
+
+
+# create table with feature totals for MI
+MI_feat_summary <- data.frame(table(meth_islands$V7))
+#rename columns
+colnames(MI_feat_summary) <- c("feature", "numMI")
+ 
+# create table with feature totals for background regions
+all.meth_feat_summary <- data.frame(table(meth_feat$V7))
+#rename columns
+colnames(all.meth_feat_summary) <- c("feature", "numAll")
+#merge background and DML feature totals 
+feat_summ <- merge(all.meth_feat_summary, MI_feat_summary, by = "feature", all = TRUE)
+#replace NAs with 0
+feat_summ[is.na(feat_summ)] <- 0
+#create variables for the sum of all meth and background features
+feat_MI_total <- sum(feat_summ$numMI)
+feat_region_total <- sum(feat_summ$numAll)
+#create a table with Chi stats for each feature
+chi_table <- data.frame() #create empty df
+for(i in 1:nrow(feat_summ)){ #loop through each feature
+  numBKGDReg <-feat_summ$numAll[i] # variable for number of background regions for specific feature
+  numMethreg <- feat_summ$numMI[i] # variable for number of DMLs for specific feature
+  totMeth <- (feat_MI_total - numMethreg) # variable for total number background regions in all features minus the number of background regions for specific feature
+  totBKGD <- (feat_region_total - numBKGDReg)  # variable for total number DMLs in all features minus the number of DMLs for specific feature
+  ct <- matrix(c(numBKGDReg,numMethreg,totBKGD,totMeth), ncol = 2) # create contingency table
+  colnames(ct) <- c(as.character(feat_summ$feature[i]),paste0("Not",feat_summ$feature[i])) #label columns of contingency table
+  rownames(ct) <- c("Loci", "Island") #lab rows of contingency table
+  print(ct)
+  x <-  data.frame(broom::tidy(prop.test(ct, correct = FALSE))) # create data frame storing the Chi sq stats results
+  x$feature <- as.character(feat_summ$feature[i]) # add feature name to chi sq df
+  FE <- fisher.test(ct)
+  x$FE.pvalue <- FE$p.value
+  chi_table <- rbind(chi_table,x) #add chi sq stats to master table
+}
+
+
+#adjust chi pvalues
+chi_table$p.adj <- p.adjust(chi_table$p.value, method = "fdr")
+#merge chi table with region counts
+chi_table <- merge(feat_summ,chi_table, by = "feature")
+all_chi_table <- chi_table
+all_chi_table$comparison <- "Loci_vs_MethIsland"
+
+```
+
+

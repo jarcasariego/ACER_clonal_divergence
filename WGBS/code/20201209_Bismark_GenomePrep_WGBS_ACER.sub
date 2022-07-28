@@ -1,0 +1,31 @@
+#!/bin/bash
+#SBATCH --qos pq_jeirinlo
+#SBATCH --account=iacc_jeirinlo
+#SBATCH --partition IB_44C_512G
+
+# Number of nodes
+#SBATCH -N 1
+
+# Number of tasks
+#SBATCH -n 4
+
+#SBATCH --output=log_genome
+
+
+##########################################################
+# Setup envrionmental variable. 
+##########################################################
+export OMP_NUM_THREADS=$SLURM_CPUS_ON_NODE
+. $MODULESHOME/../global/profile.modules
+module load bismark-0.22.3
+module load bowtie2-2.3.4.1-gcc-4.8.5-3io37rb
+pwd; hostname; date
+ 
+echo "Running program on $SLURM_CPUS_ON_NODE CPU cores"
+
+##########################################################
+
+bismark_genome_preparation \
+--path_to_aligner /home/applications/bowtie2/2.1.0/bin/ \
+--verbose /scratch/jeirinlo/jrodr979/Clonal_divergence_paper/2020-12-08-WGBS-analysis/2020-12-09-Bismark/Bismark_Inputs/
+

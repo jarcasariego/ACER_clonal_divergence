@@ -1,0 +1,109 @@
+---
+title: "DMR_by_feature"
+author: "Javier Rodriguez Casariego"
+date: "12/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '/Volumes/JARC_2T/Data_PhD/Rapid_Project/Clonal_divergence/ACER_clonal_divergence/WGBS')
+```
+
+load libraries
+```{r}
+library(data.table)
+library(gplots)
+library(ggplot2) #install.packages('ggplot2')
+library(dplyr)
+library(broom)
+library(RColorBrewer)
+library(egg) #install.packages('egg')
+library(purrr)
+library(nlme)
+library(vegan)
+```
+
+read in features for DMRs
+```{r}
+# read in features that significant DMRs overlap with
+DMR_1way_site_feat <- fread("analyses/Genomic_features/DMR_genomic_features/aov_0.05_site_features.txt", header = FALSE, sep = "\t", stringsAsFactors = FALSE) #DMRs resulting from 1way anova not considering genet influence
+
+DMR_2way_site_feat <- fread("analyses/Genomic_features/DMR_genomic_features/aov2way_0.05_site_features.txt", header = FALSE, sep = "\t", stringsAsFactors = FALSE) #DMRs resulting from 2way anova including genet as a variable
+
+DMR_2way_interact_feat <- fread("analyses/Genomic_features/DMR_genomic_features/aov2way_0.05_site_genet_features.txt", header = FALSE, sep = "\t", stringsAsFactors = FALSE)
+
+# read in features that covered regions (background) overlap with
+all_feat <- fread("analyses/Genomic_features/2021-04-11-all_3xCpG_features.txt", header = FALSE, sep = "\t", stringsAsFactors = FALSE)
+
+```
+### Significant DMRs for site with 2way ANOVA (less restrictive including genet influence)
+format data for plotting
+```{r}
+# retain only the genome coordinates of the feature, and the feature
+
+DMR_feat <- DMR_2way_site_feat[,-c(1:4)]
+colnames(DMR_feat) <- c("scaffold", "start", "end", "feature")
+DMR_feat$feature <- gsub("exon", "CDS", DMR_feat$feature)
+feat <- all_feat[,-c(1:3)]
+colnames(feat) <- c("scaffold", "start", "end", "feature")
+
+  
+DMR_feat$region <- "DMRs"
+feat$region <- "all.regions"
+
+#combine all features and DMRs
+feat_combined <- rbind(DMR_feat, feat)
+feat_combined$feature <- gsub("similarity", "repeat.region",feat_combined$feature)
+feat_combined$feature <- gsub("put_promoter", "putative.promoter",feat_combined$feature)
+feat_combined$feature <- factor(feat_combined$feature, levels = c("intergenic", "repeat.region", "putative.promoter", "CDS", "intron", "3prime_UTR", "tRNA"))
+
+#plot
+#jpeg("output/general_comp.DMR_genom_feat_stacked_barplot.jpg", width = 6, height = 5, units = "in", res =300)
+ggplot(feat_combined,aes(x = region, y = ..count.., fill = factor(feature), group = feature)) + geom_bar(position = "fill", color = "black") + scale_y_continuous(labels=scales::percent) + ylab("% of total regions") + theme_bw() + theme(axis.text.x = element_text(size = 7, angle = 60, hjust = 1), axis.title = element_text(size = 12, face = "bold")) + scale_fill_manual("Feature",values = RColorBrewer::brewer.pal(9,"BuGn"))
+#dev.off()
+```
+# Run Chi square test on feature proportions
+
+```{r}
+# create table with feature totals for DMRs
+DMR_feat_summary <- data.frame(table(DMR_feat$feature))
+#rename columns
+colnames(DMR_feat_summary) <- c("feature", "numDMR")
+ 
+# create table with feature totals for background regions
+all_feat_summary <- data.frame(table(feat$feature))
+#rename columns
+colnames(all_feat_summary) <- c("feature", "numRegion")
+#merge background and DMR feature totals 
+all_feat_summ <- merge(DMR_feat_summary, all_feat_summary, by = "feature", all = TRUE)
+#replace NAs with 0
+all_feat_summ[is.na(all_feat_summ)] <- 0
+#create variables for the sum of all DMR and background features
+all_feat_DMR_total <- sum(all_feat_summ$numDMR)
+all_feat_region_total <- sum(all_feat_summ$numRegion)
+#create a table with Chi stats for each feature
+chi_table <- data.frame() #create empty df
+for(i in 1:nrow(all_feat_summ)){ #loop through each feature
+  numBKGDReg <-all_feat_summ$numRegion[i] # variable for number of background regions for specific feature
+  numDMRreg <- all_feat_summ$numDMR[i] # variable for number of DMRs for specific feature
+  totDMR <- (all_feat_DMR_total - numDMRreg) # variable for total number background regions in all features minus the number of background regions for specific feature
+  totBKGD <- (all_feat_region_total - numBKGDReg)  # variable for total number DMRs in all features minus the number of DMRs for specific feature
+  ct <- matrix(c(numBKGDReg,numDMRreg,totBKGD,totDMR), ncol = 2) # create contingency table
+  colnames(ct) <- c(as.character(all_feat_summ$feature[i]),paste0("Not",all_feat_summ$feature[i])) #label columns of contingency table
+  rownames(ct) <- c("Region", "DMR") #lab rows of contingency table
+  print(ct)
+  x <-  data.frame(broom::tidy(prop.test(ct, correct = FALSE))) # create data frame storing the Chi sq stats results
+  x$feature <- as.character(all_feat_summ$feature[i]) # add feature name to chi sq df
+  chi_table <- rbind(chi_table,x) #add chi sq stats to master table
+}
+#adjust chi pvalues
+chi_table$p.adj <- p.adjust(chi_table$p.value, method = "fdr")
+#merge chi table with region counts
+chi_table <- merge(all_feat_summ,chi_table, by = "feature")
+chi_table[,c(1,4:7,13)]
+```
+# Found significant enrichment of CDS and Repetitive regions in DMRs responding to site
+
+
+

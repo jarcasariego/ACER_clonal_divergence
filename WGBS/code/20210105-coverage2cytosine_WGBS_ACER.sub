@@ -1,0 +1,81 @@
+#!/bin/bash
+#SBATCH --qos normal
+#SBATCH --account=acc_jeirinlo
+#SBATCH --partition default-partition
+
+# Number of nodes
+#SBATCH -N 1
+
+# Number of tasks
+#SBATCH -n 8
+
+#SBATCH --output=log_Cyto
+
+##########################################################
+# Setup envrionmental variable. 
+##########################################################
+export OMP_NUM_THREADS=$SLURM_CPUS_ON_NODE
+. $MODULESHOME/../global/profile.modules
+module load bismark-0.22.3
+pwd; hostname; date
+ 
+echo "Running program on $SLURM_CPUS_ON_NODE CPU cores"
+
+##########################################################
+
+genome="/scratch/jeirinlo/jrodr979/Clonal_divergence_paper/2020-12-08-WGBS-analysis/2020-12-09-Bismark/Bismark_Inputs"
+bismark_files="/scratch/jeirinlo/jrodr979/Clonal_divergence_paper/20201221_L,0,-0.9/cov_files"
+
+#run coverage to cytosine
+cd ${bismark_files}
+
+find ${bismark_files}/*deduplicated.bismark.cov.gz \
+| xargs basename -s deduplicated.bismark.cov.gz \
+| xargs -I{} coverage2cytosine \
+--genome_folder ${genome} \
+-o {} \
+--merge_CpG \
+--zero_based \
+{}deduplicated.bismark.cov.gz
+
+
+#creating bedgraphs post merge
+
+for f in ${bismark_files}/*merged_CpG_evidence.cov
+do
+  STEM=$(basename "${f}" .CpG_report.merged_CpG_evidence.cov)
+  cat "${f}" | awk -F $'\t' 'BEGIN {OFS = FS} {if ($5+$6 >= 10) {print $1, $2, $3, $4}}' \
+  > "${STEM}"_10x.bedgraph
+done
+
+
+
+for f in ${bismark_files}/*merged_CpG_evidence.cov
+do
+  STEM=$(basename "${f}" .CpG_report.merged_CpG_evidence.cov)
+  cat "${f}" | awk -F $'\t' 'BEGIN {OFS = FS} {if ($5+$6 >= 5) {print $1, $2, $3, $4}}' \
+  > "${STEM}"_5x.bedgraph
+done
+
+
+#creating tab files with raw count for glms
+
+for f in ${bismark_files}/*merged_CpG_evidence.cov
+do
+  STEM=$(basename "${f}" .CpG_report.merged_CpG_evidence.cov)
+  cat "${f}" | awk -F $'\t' 'BEGIN {OFS = FS} {if ($5+$6 >= 10) {print $1, $2, $3, $4, $5, $6}}' \
+  > "${STEM}"_10x.tab
+done
+
+
+for f in ${bismark_files}/*merged_CpG_evidence.cov
+do
+  STEM=$(basename "${f}" .CpG_report.merged_CpG_evidence.cov)
+  cat "${f}" | awk -F $'\t' 'BEGIN {OFS = FS} {if ($5+$6 >= 5) {print $1, $2, $3, $4, $5, $6}}' \
+  > "${STEM}"_5x.tab
+done
+
+
+
+
+

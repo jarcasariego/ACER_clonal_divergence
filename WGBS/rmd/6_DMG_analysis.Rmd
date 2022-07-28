@@ -1,0 +1,488 @@
+---
+title: "DMG_Analysis"
+author: "Javier Rodriguez Casariego"
+date: "10/23/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '/Volumes/JARC_2T/Data_PhD/Rapid_Project/Clonal_divergence/ACER_clonal_divergence/WGBS')
+```
+
+```{r}
+library(plotrix) 
+library(ggplot2)
+library(gridExtra)
+library(pheatmap)
+library(dplyr)
+library(tidyverse)
+library(tidyr)
+library(topGO) #BiocManager:: install('topGO')
+library(goseq) #BiocManager:: install('goseq')
+library(genefilter)
+library(gplots)
+library(cowplot)
+library(lsmeans) #install.packages('lsmeans')
+library(ontologyIndex) #BiocManager:: install('ontologyIndex')
+library(ontologySimilarity) #BiocManager:: install('ontologySimilarity')
+library(data.table)
+library(RColorBrewer)
+library(colorRamps)
+library(GSEABase) #BiocManager:: install('GSEABase')
+library(doParallel)
+library(kableExtra)
+```
+
+
+Methylation Analysis
+## Loading genomic and annotation
+```{r}
+#load sample information
+sample.info <- read.csv("data/Sample_Metadata.csv", header=T, sep=",", na.string="NA", stringsAsFactors = F) #read in info
+colnames(sample.info) <- c("site","colonyID","seq_id","Sample.ID","genotype")
+samp <- sample.info$Sample.ID # set sample info
+#generate geneLoc file for downstream analyses 
+geneLoc <- read.csv("data/Genome_trans_corr/Acer_trans2genome_coor.tab", header=F, sep="\t", na.string="NA", skip=3, stringsAsFactors = F) #read in data file
+colnames(geneLoc) <- c("chr","start","end","gene_id")
+saveRDS(geneLoc, paste0("data/gene_GeneLoc.RData"))
+#load genes gff
+Genes <- geneLoc
+#Load annotation file
+Annot <- read.csv("../TagSeq/data/ACER_Transcriptome(Libro_etal_2013)/a.cervicornis_Libro etal 2013_annot_Matz/acer_iso2gene.tab", header=FALSE, sep="\t", na.string="NA", stringsAsFactors = F, skip=0)
+seq2iso <- read.csv("../TagSeq/data/ACER_Transcriptome(Libro_etal_2013)/a.cervicornis_Libro etal 2013_annot_Matz/acer_seq2iso.tab", header=FALSE, sep="\t", na.string="NA", stringsAsFactors = F, skip=0)
+iso2go <- read.csv("../TagSeq/data/ACER_Transcriptome(Libro_etal_2013)/a.cervicornis_Libro etal 2013_annot_Matz/acer_iso2go.tab", header=TRUE, sep="\t", na.string="NA", stringsAsFactors = F, skip=0)
+iso2kog <- read.csv("../TagSeq/data/ACER_Transcriptome(Libro_etal_2013)/a.cervicornis_Libro etal 2013_annot_Matz/acer_iso2kogClass.tab", header=TRUE, sep="\t", na.string="NA", stringsAsFactors = F, skip=0)
+colnames(Annot) <- c("iso","gene")
+colnames(seq2iso) <- c("gene_id", "iso")
+colnames(iso2go) <- c("iso", "GO")
+colnames(iso2kog) <- c("iso", "kog")
+
+Annot_full <- merge(Annot, seq2iso, by="iso", all=TRUE)
+Annot_full <- merge(Annot_full, iso2go, by="iso", all=TRUE)
+Annot_full <- merge(Annot_full, iso2kog, by="iso", all=TRUE)
+Annot_full <- merge(Annot_full, Genes, by="gene_id")
+colnames(Annot_full)
+
+GO.data <- merge(seq2iso, iso2go, by="iso") #select names and GOs
+GO.data <- GO.data[,-1]
+colnames(GO.data) <- c("gene", "GO.IDs") #rename columns
+GO.data$gene <- as.factor(GO.data$gene)
+write.table(GO.data, "analyses/gomwu/Acer_annotation_Gene.GO.IDs.tab", sep = "\t", quote = F, row.names = F, col.names = F)
+```
+
+
+##############################################Load filtered methylation counts##################################
+```{r}
+
+meth.data <- list.files(path = "data/OSF/", pattern = ".bed$", full.names=TRUE) %>%
+  set_names(.) %>% 
+  map_dfr(read.csv,.id="Sample.ID", header=FALSE, sep="\t", na.string="NA", stringsAsFactors = FALSE) 
+meth.data <- meth.data %>%
+  dplyr::select(-c(4,8:10)) %>%
+  group_by(Sample.ID)
+colnames(meth.data) <- c("Sample.ID", "scaffold", "position","per.meth","meth","unmeth","gene")
+meth.data$Sample.ID <- gsub("data/OSF//","",meth.data$Sample.ID) #remove extra characters
+meth.data$Sample.ID <- gsub("_10x.*","",meth.data$Sample.ID) #remove extra characters 
+MD.All <- merge(meth.data, sample.info, by="Sample.ID")
+saveRDS(MD.All, file = "output/meth_dataset.RData")
+
+```
+
+
+# Testing for Differentially Methylated Genes
+```{r}
+# Comparison of samples between symb, heat stress and the interaction
+# Binomial GLM to test for differentially methylated genes
+sub_meth_table  <- MD.All
+sub_meth_table$group <- paste0(sub_meth_table$Sample.ID, sub_meth_table$gene)
+#filter for genes with >3 methylated positions
+min.filt <- count(sub_meth_table, vars = c( group))
+newdata <- min.filt[ which(min.filt$n > 2), ]
+sub_meth_table <- sub_meth_table[sub_meth_table$group %in% newdata$vars,]
+
+saveRDS(sub_meth_table, file = "output/gene_meth_table.RData")
+
+
+## Depending on the size of the dataset, this chunk might be run in a cluster
+
+sub_meth_table <- readRDS("output/gene_meth_table.RData")
+
+# create data frame to stored results
+results <- data.frame()
+
+# Sub-divide meth dataset
+gs <- unique(sub_meth_table$gene)
+gs_1 <- gs[c(1:10845)]
+gs_2 <- gs[c(10846:21690)]
+gs_3 <- gs[c(21691:32535)]
+
+# set multicore paramters 
+cores=detectCores()
+cl <- parallel::makeCluster(32, setup_strategy = "sequential")
+registerDoParallel(cl)
+#first subset the unique dataframes and second run the GLMs
+results <- foreach(i=1:length(gs_1), .combine=rbind) %dopar% {
+    #subset the dataframe gene by gene
+  sub_meth_table1 <- subset(sub_meth_table, gene ==gs_1[i])
+  
+  # fit glm position model
+  fit <- glm(matrix(c(meth, unmeth), ncol=2) ~ site, 
+             data=sub_meth_table1, family=binomial)
+  a <- anova(fit, test="Chisq")
+  
+  # capture summary stats to data frame
+  df <- data.frame(gene = sub_meth_table1[1,7],
+                   pval.site = a$`Pr(>Chi)`[2],
+                   stringsAsFactors = F)
+}
+
+#stop cluster
+stopCluster(cl)
+
+cores=detectCores()
+cl <- parallel::makeCluster(32, setup_strategy = "sequential")
+registerDoParallel(cl)
+#first subset the unique dataframes and second run the GLMs
+results2 <- foreach(i=1:length(gs_2), .combine=rbind) %dopar% {
+    #subset the dataframe gene by gene
+  sub_meth_table1 <- subset(sub_meth_table, gene ==gs_2[i])
+  
+  # fit glm position model
+  fit <- glm(matrix(c(meth, unmeth), ncol=2) ~ site, 
+             data=sub_meth_table1, family=binomial)
+  a <- anova(fit, test="Chisq")
+  
+  # capture summary stats to data frame
+  df <- data.frame(gene = sub_meth_table1[1,7],
+                   pval.site = a$`Pr(>Chi)`[2],
+                   stringsAsFactors = F)
+}
+
+#stop cluster
+stopCluster(cl)
+
+cores=detectCores()
+cl <- parallel::makeCluster(32, setup_strategy = "sequential")
+registerDoParallel(cl)
+#first subset the unique dataframes and second run the GLMs
+results3 <- foreach(i=1:length(gs_3), .combine=rbind) %dopar% {
+    #subset the dataframe gene by gene
+  sub_meth_table1 <- subset(sub_meth_table, gene ==gs_3[i])
+  
+  # fit glm position model
+  fit <- glm(matrix(c(meth, unmeth), ncol=2) ~ site, 
+             data=sub_meth_table1, family=binomial)
+  a <- anova(fit, test="Chisq")
+  
+  # capture summary stats to data frame
+  df <- data.frame(gene = sub_meth_table1[1,7],
+                   pval.site = a$`Pr(>Chi)`[2],
+                   stringsAsFactors = F)
+}
+
+#stop cluster
+stopCluster(cl)
+# An error will be generated here for contrasts. 
+#This potential for contrasts (interactions) is included in the case one wants to examine the role of position of CpG within a gene
+#Error in `contrasts<-`(`*tmp*`, value = contr.funs[1 + isOF[nn]]) : contrasts can be applied only to factors with 2 or more levels
+#Continuing the analysis from results line will generate the results in the absence of the contrast (interaction).
+results <- rbind(results, results2)
+results <- rbind(results, results3)
+results[is.na(results)] <- 0
+results$adj.pval <- p.adjust(results$pval.site, method='BH')
+
+saveRDS(results, file = "output/gene_meth_glm_results.RData")
+
+# Can continue local
+
+results <- readRDS("output/gene_meth_glm_results.RData")
+
+sig_genes <-results[, c(1,3)]
+sig_genes <- sig_genes[order(sig_genes$adj.pval),]
+sig_genes <- sig_genes[which(sig_genes$adj.pval <0.05), ]
+colnames(sig_genes) <- c("gene_id", "adj.pval")
+sub_meth_table$per.meth <- (sub_meth_table$meth/(sub_meth_table$meth+sub_meth_table$unmeth))*100 #calculate percent methylation
+
+# Annotation of DMG between sites
+DMG_annot <- merge(sig_genes , Annot_full, by="gene_id", all.x=TRUE)
+DMG_annot <- DMG_annot[order(DMG_annot$adj.pval),]
+DMG_annot <- DMG_annot[!duplicated(DMG_annot$gene),]
+write.table(DMG_annot, 'output/Table_S1_DMG_annot.tsv', sep='\t', row.names=FALSE)
+
+genelist_DMGs <- DMG_annot$iso
+
+DEGs <- read.table('../TagSeq/output/DEGs_all_genets.tsv', sep='\t', header = TRUE)
+colnames(DEGs) <- c("iso", "annot")
+
+genelist_DEGs <- DEGs$iso
+
+
+#Create Venn Diagram of DEG and DMGs 
+library(VennDiagram)
+myCol <- c("#FBB4AE","#B3CDE3")
+venn.diagram(
+        x = list(genelist_DEGs,genelist_DMGs),
+                category.names = c("DEGs", "DMGs"),
+        filename = 'output/DMG_DEG_venn_diagramm.png',
+        output=TRUE,
+        
+        # Output features
+        imagetype="png" ,
+        height = 480 , 
+        width = 480 , 
+        resolution = 300,
+        compression = "lzw",
+        
+        # Circles
+        lwd = 2,
+        lty = 'blank',
+        fill = myCol,
+        
+        # Numbers
+        cex = .5,
+        fontface = "bold",
+        fontfamily = "sans",
+        
+        # Set names
+        cat.cex = 0.6,
+        cat.fontface = "bold",
+        cat.default.pos = "outer",
+        cat.pos = c(-27, 27),
+        cat.dist = c(0.055, 0.055),
+        cat.fontfamily = "sans"
+)
+
+# find shared genes 
+shared_DMG_DEG <- intersect(genelist_DEGs,genelist_DMGs)
+
+
+
+```
+
+
+```{r}
+##### Heatmap of DMGs  #####
+meth_table.means <- aggregate(per.meth ~ site*gene, data=MD.All, FUN=mean)
+meth_table.means_s <- meth_table.means[meth_table.means$gene %in% sig_genes$gene,]
+
+
+meth_table.means <- meth_table.means_s
+meth_table.means$tempID <- paste(meth_table.means$site, meth_table.means$gene, meth_table.means$per.meth, sep = ":")
+meth_table.means <- meth_table.means[match(unique(meth_table.means$tempID), meth_table.means$tempID),]
+meth_table.means <- meth_table.means[,-4]
+
+meth_table <- aggregate(per.meth ~ Sample.ID*gene, data=MD.All, FUN=mean)
+meth_table_sig <- meth_table[meth_table$gene %in% sig_genes$gene,]
+
+
+# Plot All_general comp
+sig_meth_mean <- meth_table.means %>% pivot_wider(names_from = c(site), values_from = per.meth)
+sig_meth_mean.mat <- as.matrix(sig_meth_mean[,-1])
+colnames(sig_meth_mean.mat) <- c("shallow_reef", "deep_reef")
+jpeg("output/sig_DMG_heatmap.jpg", width = 600, height = 1000)
+AllHM <- heatmap.2(sig_meth_mean.mat, margins = c(10,10), cexRow = 1.2, cexCol = 1, Colv=FALSE, dendrogram="row", labRow=FALSE, col = rev(RColorBrewer::brewer.pal(name = "RdYlBu", n = 10)), na.color = "black", density.info = "none", trace = "none", scale = "row", sepwidth=c(0.025,0.025), sepcolor="darkgray", keysize = 1)
+dev.off()
+
+
+meth_table.means$site <- ordered(meth_table.means$site,
+                         levels = c("LP15", "LP40"))
+group_by(meth_table.means, site) %>%
+  summarise(
+    count = n(),
+    mean = mean(per.meth, na.rm = TRUE),
+    sd = sd(per.meth, na.rm = TRUE)
+  )
+
+
+### Perform analysis for sign diff in Gene methylation (1x1 samples)
+
+meth_table_genets <- merge(meth_table, sample.info, by='Sample.ID') 
+
+res.aov <- aov(per.meth ~ site*genotype, data = meth_table_genets)
+summary(res.aov)
+TukeyHSD(res.aov)
+
+pairwise.t.test(meth_table_genets$per.meth, meth_table_genets$site,
+                 p.adjust.method = "BH")
+
+library("ggpubr")
+ggboxplot(meth_table_genets, x = "site", y = "per.meth", 
+          color = "site", palette = c("#00AFBB", "#E7B800"),
+          ylab = "Percent Methylation", xlab = "Site")
+ggline(meth_table_genets, x = "site", y = "per.meth", 
+          add = c("mean_se", "jitter"),
+          color = "site", palette = c("#00AFBB", "#E7B800"),
+          ylab = "Percent Methylation", xlab = "Site")
+
+#filter for diff methylation > 10 %
+delta_meth <- sig_meth_mean
+delta_meth$delta <- delta_meth$LP15 - delta_meth$LP40
+delta_meth <- delta_meth[which(delta_meth$delta > 10 | delta_meth$delta < -10), ]
+delta_meth <- delta_meth[,-4]
+
+sig_delta_meth_mean <- delta_meth %>% pivot_longer(!gene, names_to = "site", values_to = "per.meth" )
+
+ggboxplot(sig_delta_meth_mean, x = "site", y = "per.meth", 
+          color = "site", palette = c("#00AFBB", "#E7B800"),
+          ylab = "Percent Methylation", xlab = "Site")
+ggline(sig_delta_meth_mean, x = "site", y = "per.meth", 
+          add = c("mean_se", "jitter"),
+          ylab = "Percent Methylation", xlab = "Site")
+
+ 
+
+# Plot independent samples
+sig_meth <- merge(meth_table_sig, sample.info, by="Sample.ID")
+sig_meth <- sig_meth[, 1:4] %>% 
+  arrange(., site, Sample.ID) 
+sig_meth <- sig_meth[, 1:3] %>% 
+  pivot_wider(names_from = c(Sample.ID), values_from = per.meth)
+
+sig_meth.mat <- as.matrix(sig_meth[,-1])
+
+jpeg("output/all_samples_sig_DMG_heatmap.jpg", width = 600, height = 1000)
+AllHM <- heatmap.2(sig_meth.mat, margins = c(10,10), cexRow = 1.2, cexCol = 1, Colv=FALSE, dendrogram="row", labRow=FALSE, col = rev(RColorBrewer::brewer.pal(name = "RdYlBu", n = 10)), na.color = "black", density.info = "none", trace = "none", scale = "row", sepwidth=c(0.025,0.025), sepcolor="darkgray", keysize = 1)
+dev.off()
+
+
+```
+
+
+#KOG enrichment analysis
+Using methdiff values, we can analyze which KOG classifications are up- or down-regulated within each genet, and across all twelve genets together.
+```{r}
+
+library(KOGMWU)
+theme_custom <- function() {
+  theme_bw(base_size = 10) %+replace%    #, base_family = "Arial"
+    theme(
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(), 
+      panel.background = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA),
+      legend.background = element_rect(fill = NA, colour = NA),
+      axis.text.x = element_blank()#,
+      #legend.title = element_text(size = 8), 
+      #legend.text = element_text(size = 7)
+    )
+}
+
+#Calculate log2fold
+meth_fold<- aggregate(per.meth ~ site*gene, data=sub_meth_table, FUN=mean) %>% 
+  pivot_wider(names_from = site, values_from = per.meth)%>%
+  mutate(log2fold = log2(LP15/LP40))
+meth_fold <- data.frame(meth_fold[,c(1,4)])
+
+# Read gene2kog file
+gene2kog <- Annot_full[,c(1,5)]%>%
+   filter(!kog == "")
+colnames(gene2kog) <- c("gene", "KOG_term")
+
+#Run KOG 
+KOG<-kog.mwu(meth_fold, gene2kog)
+
+ktable <- makeDeltaRanksTable(list("shallow_vs_deep"= KOG)) %>%
+  rownames_to_column(var = "term") %>%
+  arrange(.,term) %>% 
+  column_to_rownames(var = "term")
+
+color = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+
+kogpvals <- KOG[,c(1,5)]
+rownames(kogpvals) <- NULL
+kogpvals <- kogpvals %>%
+  arrange(.,term) %>%
+  column_to_rownames(var = "term") %>%
+  transmute_all(., gtools::stars.pval)
+
+# Making a heatmap with hierarchical clustering trees: 
+
+KOGheatmap <- function(deltaranks, pvals, ...) {
+  deltaranks <- as.matrix(deltaranks)
+  paletteLength <- 100
+  myColor <- colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(paletteLength)
+  myBreaks <- c(seq(min(deltaranks), 0, length.out = ceiling(paletteLength/2) + 1), 
+                seq(max(deltaranks)/paletteLength, max(deltaranks), 
+                    length.out = floor(paletteLength/2)))
+  pheatmap(mat = deltaranks, display_numbers = pvals, fontsize_number = 8,
+           cluster_cols = FALSE, cluster_rows = FALSE,
+           treeheight_row = 15, treeheight_col = 15,
+           border_color = "white", scale = "none",
+           color = myColor, breaks = myBreaks, ...)
+}
+
+KOGfig <- KOGheatmap(deltaranks = ktable, pvals = kogpvals , fontsize = 8)
+ggsave(filename = "output/KOG_heatmap.png", KOGfig, width = 110, height = 84.5, units = "mm")
+
+# Write table for supp info
+kogout <- KOG %>%
+  filter(padj < 0.1) %>%
+  dplyr::select(term, delta.rank, padj) %>%
+  mutate(padj = signif(padj, digits = 3))
+
+write_tsv(kogout, "output/kogout.txt")
+
+(k_table <- knitr::kable(kogout)  %>%
+  kable_styling(full_width = TRUE))
+
+```
+
+#GO_MWU
+```{r}
+
+MD.All <- readRDS("output/meth_dataset.RData")
+meth.means <- aggregate(per.meth ~ site*gene, data=MD.All, FUN=mean) %>%
+  spread(., key = site, value = c(per.meth))
+
+dnam.gene_summ_5 <- meth.means
+dnam.gene_summ_5_diff <- dnam.gene_summ_5$LP15-dnam.gene_summ_5$LP40
+dnam_final <- data.frame(gene=as.factor(dnam.gene_summ_5$gene),diff=dnam.gene_summ_5_diff)
+write.csv(dnam_final,file = "analyses/gomwu/GOMWU_CpG.csv",row.names = FALSE, quote = F)
+
+# Subset and calculate log2fold 
+
+dnam.gene_summ_5_lf2 <- log2(dnam.gene_summ_5$LP15/dnam.gene_summ_5$LP40)
+dnam_final_lf2 <- data.frame(gene_id=as.character(dnam.gene_summ_5$gene),log2fold=dnam.gene_summ_5_lf2)
+write.csv(dnam_final_lf2,file = "analyses/gomwu/GOMWU_CpG_lf2.csv",row.names = FALSE, quote = F)
+
+```
+
+```{r}
+## NOTE: the GO MWU functions assume all data and scripts are together in the current working directory.
+# the data and src gomwu folders and setting your wd directory to that path.
+
+setwd("analyses/gomwu")
+library(ape)
+# Source GO MWU functions
+source("gomwu.functions.R")
+
+goDatabase="go.obo"
+# download from http://www.geneontology.org/GO.downloads.ontology.shtml
+## Enrichment categories
+goDivision=c("MF","BP","CC") # Check all three divisions
+## Annotation file
+goAnnotations=paste0("Acer_annotation_Gene.GO.IDs.tab")
+
+## Run log Bayes Factor for CpGs diff 
+cpg_all <- "GOMWU_CpG.csv"
+
+## Run log Bayes Factor for CpGs log2fold 
+cpg_lf2 <- "GOMWU_CpG_lf2.csv"
+input <- c(cpg_all,cpg_lf2)
+
+## GOMWU
+
+for(i in 1:length(input)){
+  for(j in goDivision){
+    gomwuStats(input[i], goDatabase, goAnnotations,j,
+               perlPath="/usr/bin/perl",
+               largest=0.1,
+               smallest=2,
+               clusterCutHeight=0.25)
+  }
+}
+
+```
+### no GO term was significant
+

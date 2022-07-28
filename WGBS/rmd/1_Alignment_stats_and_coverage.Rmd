@@ -1,0 +1,105 @@
+---
+title: "MultiQC_detailed"
+author: "Javier Rodriguez Casariego"
+date: "10/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '/Volumes/JARC_2T/Data_PhD/Rapid_Project/Clonal_divergence/ACER_clonal_divergence/WGBS')
+```
+
+load libraries
+```{r}
+library(dplyr)
+library(data.table)
+library(gtools)
+library(ggplot2)
+library(ggpubr)
+library(knitr)
+library(kableExtra)
+library(XML)
+```
+
+read in data 
+```{r}
+#bismark alignment stats extracted from MultiQC with Shelly's code
+multi_bismark <- fread("data/General_Characterization/multiqc_bismark_alignment.txt", header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+multi_dedup <- fread("data/General_Characterization/multiqc_bismark_dedup.txt", header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+#general trimming stats
+raw_multiqc <- fread("data/General_Characterization/multiqc_raw_general_stats.txt", header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+trim_multiqc <- fread("data/General_Characterization/multiqc_trimming_stats.txt", header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+#load metadata
+meta <- readxl::read_xlsx("data/General_Characterization/Sample_Metadata.xlsx", sheet = "SampleNormalization_AllAnalyses")
+meta_final <- filter(meta, Time == "T12") %>%
+  mutate(depth = recode(Site, LP15 = "S", LP40 = "D")) %>%
+  mutate_if(is.character, as.factor)
+meta_final <- meta_final[,c(26, 36, 2, 3, 5)]
+colnames(meta_final) <- c("Sample", "depth", "Time", "Site", "Frag.ID")
+depth <- meta_final$depth
+
+#CpG coverage distribution
+cov_dist <- read.csv("data/General_Characterization/CpGbyCoverage.csv", header = TRUE, sep = ",")
+
+summary(multi_bismark)
+
+```
+
+
+generate simplified table for manuscript main text
+```{r}
+multi_bismark_simp <- multi_bismark[,c("Sample","total_reads","no_alignments", "ambig_reads")]
+#add raw reads
+multi_bismark_simp <- merge(data.frame(unique(raw_multiqc[,c("Sample", "total_sequences")])), multi_bismark_simp, by = c("Sample"))
+#add uniq_aligned and dedup
+multi_bismark_simp <- merge(data.frame(unique(multi_dedup[,c("Sample", "aligned_reads", "dedup_reads")])), multi_bismark_simp, by = c("Sample"))
+#add treatment
+multi_bismark_simp <- merge(data.frame(unique(meta_final[,c("Sample", "depth")])), multi_bismark_simp, by = c("Sample"))
+#remove sample column
+multi_bismark_simp$Sample <- NULL
+#rename columns
+colnames(multi_bismark_simp) <- c("depth", "uniquely aligned", "uniquely aligned excluding duplicates","raw", "trimmed", "unaligned", "ambiguously aligned")
+multi_bismark_simp <- multi_bismark_simp %>%
+  relocate(`uniquely aligned`, .after=last_col()) %>%
+  relocate(`uniquely aligned excluding duplicates`, .after=last_col())
+
+
+```
+
+## plot different stats
+
+```{r}
+#convert to long format
+multi_bismark_simp_stacked <- tidyr::gather(multi_bismark_simp, "category", "reads",2:7)
+#add ordered levels to the category column factors
+multi_bismark_simp_stacked$category <- factor(multi_bismark_simp_stacked$category, levels = c("raw", "trimmed", "unaligned", "ambiguously aligned", "uniquely aligned", "uniquely aligned excluding duplicates"))
+multi_bismark_simp_stacked$depth <- gsub("S", "Shallow_reef", multi_bismark_simp_stacked$depth)
+multi_bismark_simp_stacked$depth <- gsub("D", "Deep_reef", multi_bismark_simp_stacked$depth)
+#calculate mean and sd for plotting
+multi_bismark_simp_stacked_sumr <- multi_bismark_simp_stacked %>% group_by(depth, category) %>% summarise(mean= mean(reads), sd = sd(reads))
+#generate bar plot with each stat adjacent to one another, treatment on x, and average reads on Y, error bars sd 
+jpeg("output/ACER_WGBS_mappingStat.jpg", width = 8, height= 3.5, units = "in", res = 300 )
+ggplot(multi_bismark_simp_stacked_sumr)+ geom_bar(aes(x = depth, y = mean,fill = depth,alpha = category, group = category),stat = "identity", position = position_dodge(), color = "black") + 
+geom_errorbar(aes(x = depth, ymin = mean-sd, ymax = mean+sd, group = category), width = 0.25,position=position_dodge(0.9), alpha = 1) + guides(color = guide_colorbar(order = 0), fill = guide_legend(order = 1)) + scale_alpha_manual(values=c(rev(seq(0.1,1, length.out = 6)))) + theme_bw()+ theme(legend.position="top",legend.title = element_text(size = 10),
+  legend.text = element_text(size = 8), strip.background =element_rect(fill="white")) + scale_fill_manual(values =c("#93b16b","#E6550D","#31A354")) + ylab("reads (average)")
+dev.off()
+
+```
+CpG by coverage 
+```{r}
+cov_dist_simp <-cov_dist %>%
+  relocate(2, .after=last_col())
+  
+colnames(cov_dist_simp) <- c("Sample", "coverage", "reads", "percent_genome", "treatment")
+
+cov_dist_simp$Sample <- NULL
+
+cov_dist_simp_summ <- cov_dist_simp %>% group_by(treatment, coverage) %>% summarise(mean= mean(percent_genome), sd = sd(percent_genome))
+
+jpeg("output/ACER_CpGxCov_WGBS.jpg", width = 4.5, height = 3, units = "in", res = 300)
+ggplot(cov_dist_simp, aes(x = coverage, y = percent_genome, color = treatment)) + geom_smooth(aes(fill = treatment)) + scale_x_continuous(breaks = seq(0,50,10)) + scale_fill_manual(values = c("#93b16b", "#E6550D")) + scale_color_manual(values = c("#93b16b", "#E6550D")) + xlab("coverage (X)") + ylab("Proportion of CpGs") + theme_bw() + theme(text = element_text(size=16))
+dev.off()
+
+```
+
