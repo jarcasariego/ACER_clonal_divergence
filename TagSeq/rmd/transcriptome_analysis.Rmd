@@ -1,0 +1,626 @@
+---
+title: "RNA_analysis"
+author: "Javier Rodriguez Casariego"
+date: "12/21/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '/Volumes/JARC_2T/Data_PhD/Rapid_Project/Clonal_divergence/ACER_clonal_divergence/TagSeq')
+```
+
+```{r packages and libraries, include=FALSE}
+
+library(DESeq2)    # BiocManager::install('DESeq2')
+library(limma)     # BiocManager::install('limma')
+library(stringr)
+library(readxl)
+library(pheatmap)
+library(RColorBrewer)
+library(variancePartition)  # BiocManager::install('variancePartition')
+library(doParallel)
+library(cowplot)
+source("data/GO_MWU/gomwu.functions.R")
+library(tidyverse)
+library(KOGMWU)  # install.packages("KOGMWU")
+library(adegenet)
+library(ggpubr)
+library(kableExtra)
+library(ggfortify) # install.packages("ggfortify")
+library(Biobase)
+library(arrayQualityMetrics)
+library(vegan)
+
+## ggplot theme
+theme_custom <- function() {
+  theme_bw(base_size = 10) %+replace%    #, base_family = "Arial"
+    theme(
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(), 
+      panel.background = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA),
+      legend.background = element_rect(fill = NA, colour = NA),
+      axis.text.x = element_text(angle=45, hjust=1, vjust = 1)#,
+      #legend.title = element_text(size = 8), 
+      #legend.text = element_text(size = 7)
+    )
+}
+```
+
+```{r load data}
+ # Import gene expression / count data
+counts <- read.table("data/processed/aligned_transcriptome/counts_to_trans.txt",header = TRUE, row.names = 1)
+# Trim column names to just the sample name
+colnames(counts) <- str_sub(colnames(counts), 1, 7)
+# Order columns by sample name
+counts <- counts[, order(colnames(counts))]
+
+# Import sample metadata
+sdat0 <- read_xlsx("data/metadata_tag_seq_ACER.xlsx") %>%
+  mutate(colony.group = interaction(genotype, site)) %>%
+  mutate_if(is.character, as.factor)
+
+sdat <- sdat0 %>%
+  arrange(seq_ID) %>%                              # order rows by sample name
+  column_to_rownames(var = "Sample.ID")               # set sample name to rownames
+
+# Gene annotations, GO, KEGG, KOG (Matz_July_2014)
+gene <- read.delim("data/ACER_Transcriptome(Libro_etal_2013)/a.cervicornis_Libro etal 2013_annot_Matz/acer_iso2gene.tab", sep = "\t")
+go <- read.delim("data/ACER_Transcriptome(Libro_etal_2013)/a.cervicornis_Libro etal 2013_annot_Matz/acer_iso2go.tab", sep = "\t")
+kegg <- read.delim("data/ACER_Transcriptome(Libro_etal_2013)/a.cervicornis_Libro etal 2013_annot_Matz/acer_iso2kegg.tab", sep = "\t")
+kog_class <- read.delim("data/ACER_Transcriptome(Libro_etal_2013)/a.cervicornis_Libro etal 2013_annot_Matz/acer_iso2kogClass.tab", sep = "\t")
+
+```
+
+```{r Sumarize count data}
+# Read in count totals of raw, postQC, and mapped reads
+count_summ <- read_csv("data/processed/read_counts_both_align.csv") 
+colnames(count_summ)[1] <- "seq_ID"
+#separate counts for alignment to transcriptome (Libro etal 2013)
+count_summ_trans <- count_summ %>%
+  select(seq_ID, raw, post_trim, mapped_Trans) %>%
+  gather(stage, count, -seq_ID) 
+#separate counts for alignment to ACER genome mRNA track
+count_summ_geno <- count_summ %>%
+  select(seq_ID, raw, post_trim, mapped_geno_RNA) %>%
+  gather(stage, count, -seq_ID)
+# Summarize counts
+counttable_trans <- sdat0 %>%
+  left_join(count_summ_trans) %>%
+  group_by(stage) %>%
+  summarize(`Min. (per sample)` = min(count),
+            `Max. (per sample)` = max(count),
+            `Median (per sample)` = median(count),
+            Total = sum(count)) %>%
+  mutate_if(is_numeric, ~ format(ceiling(.), big.mark = ",")) %>%
+  arrange(rev(stage))
+counttable_geno <- sdat0 %>%
+  left_join(count_summ_geno) %>%
+  group_by(stage) %>%
+  summarize(`Min. (per sample)` = min(count),
+            `Max. (per sample)` = max(count),
+            `Median (per sample)` = median(count),
+            Total = sum(count)) %>%
+  mutate_if(is_numeric, ~ format(ceiling(.), big.mark = ",")) %>%
+  arrange(rev(stage)) 
+
+counttable_trans %>%
+   knitr::kable(caption = "Total read counts")
+counttable_geno %>%
+   knitr::kable(caption = "Total read counts")
+
+# Save table to include in supplemental information
+write_csv(counttable_trans, path = "output/readcounttable.csv")
+
+```
+
+```{r DESeq}
+
+# Create full DESeqDataSet
+dds <- DESeqDataSetFromMatrix(countData = counts,
+                              colData = sdat,
+                              design = ~ genotype+depth)
+
+### Remove genes counted zero times in subset
+dds <- dds[ rowSums(counts(dds)) > 0, ]
+head(dds)
+
+```
+
+```{r}
+# Number of samples
+nsamples <- ncol(counts(dds))
+
+# Number of reads per sample
+rps <- qplot(colSums(counts(dds))) +
+  labs(x = "Mapped reads per sample", y = "Number of samples",
+       title = "Mapped reads per sample") +
+  geom_label(aes(x = 4e6, y = 7.5, label = paste(nsamples, "samples")))
+# Sample Mc20-05 has far more counts than others -- may need to rarefy this sample down to median count?
+
+# Number of reads per colony
+# count_summ %>%
+#   filter(stage == "mapped", colony %in% c(20,22, 26)) %>%
+#   group_by(colony) %>%
+#   ggplot(aes(x = colony, y = count)) +
+#   geom_boxplot() +
+#   ylim(0, 300000)
+
+# Number of genes
+ngenes <- nrow(counts(dds))
+# Number of reads per gene
+rpg <- qplot(log10(rowSums(counts(dds))), bins = 16) +
+  labs(x = "log10(Mapped reads per gene)", y = "Number of genes",
+       title = "Mapped reads per gene") +
+  geom_label(aes(x = 5, y = 5000, label = paste(ngenes, "genes")))
+
+countfig <- plot_grid(rps, rpg)
+
+countfig
+
+# Save table to include in supplemental information
+ggsave(countfig, filename = "output/Fig_read_counts.png", device = "png", width = 7, height = 4)
+```
+
+```{r Filter and transform count data}
+
+# Normalize expression data for visualization purposes using VST tranformation
+vsd <- vst(dds, blind = TRUE)
+
+# Check for outliers
+e=ExpressionSet(assay(vsd), AnnotatedDataFrame(as.data.frame(colData(vsd))))
+setwd('/Volumes/JARC_2T/Data_PhD/Rapid_Project/Clonal_divergence/ACER_clonal_divergence/TagSeq/output')
+arrayQualityMetrics(e,intgroup=c("depth","genotype"),force=T)
+dev.off()
+vsd2=assay(vsd)
+# adding sample names
+snames=c("N45_S","N68_S","N68_D","N85_D","N43_D","N45_D","N12_D","V41_S","N66_S","N11_D","N35_S","V57_S","N35_D","N43_S","N90_S","N11_S","N36_S","V57_D","N36_D","N66_D","N86_D","N90_D","N12_S","V41_D","N86_S","N85_S")
+colnames(vsd2)=snames
+head(vsd2)
+
+pheat <- pheatmap(cor(vsd2))
+
+ggsave(filename = "output/Fig.heat_GE.png",pheat, width = 130, height = 120, units = "mm")
+```
+
+### Visualize transcriptome
+```{r Principal Coordinates Analysis}
+
+## Calculate distances among samples
+sampleDists <- dist(t(assay(vsd)), method = "manhattan")
+sampleDistMatrix <- as.matrix(sampleDists)
+
+## Calculate MDS
+mds <- as.data.frame(colData(vsd)) %>% 
+  cbind(cmdscale(sampleDistMatrix)) %>% 
+  mutate(alphaval = ifelse(site == "LP15", 1, 0))
+
+# Calculate group centroids for plotting
+mds <- mds %>%
+  group_by(site) %>%
+  dplyr::summarise(c1 = mean(`1`), c2 = mean(`2`)) %>%    
+  full_join(mds)
+
+# Calculate variance explained by each PC
+MDS <- cmdscale(sampleDistMatrix, eig = TRUE)
+vexpl <- round(MDS$eig*100/sum(MDS$eig),1)[1:2]
+
+# Plot with spiders
+pcoa <- ggplot(mds, aes(color = genotype, shape = site)) +
+  geom_segment(mapping = aes(x = `1`, y = `2`, xend = c1, yend = c2), lwd = 0.25, col = "grey") +
+  geom_point(size = 2, aes(x = c1, y = c2), col = "black", show.legend = FALSE) +
+  geom_point(size = 0.7, aes(x = `1`, y = `2`)) +
+  scale_shape_discrete(name = "Depth", labels = c("deep", "shallow")) +
+  scale_color_discrete(name = "Genet",) +
+  labs(x = paste0("PC1 [", vexpl[1],"%]"), y = paste0("PC2 [", vexpl[2],"%]")) +
+  theme_custom() +
+  theme(legend.spacing = unit(0, "cm"), legend.key.size = unit(0.7, 'lines')) +
+  guides(fill=guide_legend(ncol=2)) 
+
+pcoa
+
+ggsave(filename = "output/Fig.pcoa_GE.png",pcoa, width = 109, height = 84.5, units = "mm")
+
+```
+### Discriminant Analysis
+
+```{r Discriminant Analysis of Principal Components (DAPC)}
+set.seed(1234)
+# Discriminant function including all genes
+vsd2 <- limma::removeBatchEffect(assay(vsd), vsd$genotype)
+# use batch-colony-removed vst counts
+dat <- data.frame(vsd2) 
+# use regular vst counts
+#dat <- data.frame(assay(vsd))
+
+# How many PCs should be kept?
+dapc2 <- dapc(t(dat), colData(dds)$site, n.da=2, n.pca=100)
+temp <- optim.a.score(dapc2, n.sim = 50)
+my.dapc <- function(n.pca) dapc(t(dat), colData(dds)$site, n.pca = n.pca, n.da = 1)
+
+library(furrr)
+plan(multiprocess)
+my.dapc.res <- tibble(n.pca = 4:20) %>%
+  mutate(dapc = map(n.pca, my.dapc),
+         a.score = furrr::future_map(dapc, a.score, n.sim = 1000, seed = TRUE),
+          mean = map_dbl(a.score, ~ .$mean),
+          cumvar = map_dbl(dapc, ~ .$var))
+ 
+ my.dapc.res %>%
+   arrange(-mean) %>%
+   head()
+
+# Retaining 5 PC's gives highest a-score (35%), but only utilizes 55% of variance. Retaining 10 PC's reduces a-score to 26%, but retains 84% of variance. Therefore, let's use 10 PC's for the DA. 
+
+dp1 <- dapc(t(dat), colData(dds)$site,
+            n.pca = 10, n.da = 1)   # Retain 10 PCs and 1 discriminant functions
+scatter(dp1,bg="white",scree.da=FALSE,scree.pca=FALSE,legend=TRUE,solid=.4)
+
+varexpl <- round((dp1$eig/sum(dp1$eig))[1:2] * 100, 1)
+
+dapc <- tibble(sample = rownames(dp1$ind.coord),
+               grp = dp1$grp,
+               LD1 = dp1$ind.coord[,1])
+
+dapc.fig <- 
+  ggdensity(dapc, x = "LD1", fill = "grp", lwd = 0.25) +
+  xlim(-6,6) +
+  labs(x = paste0("LD1 [", vexpl[1],"%]"), y = "density") +
+  theme_custom() +
+  scale_fill_manual(values =c("#93b16b","#E6550D"))
+
+
+ggsave(filename = "output/DAPC_GE.png", plot = dapc.fig, width = 109, height = 84.5, units = "mm")
+  
+
+```
+
+Differential expression analysis
+Although the PCOA showed grouping per genet, I will analyze differential expression across all genets together to see what responses are common hence diverging in response to habitat.
+
+```{r Run DESeq, include=FALSE}
+
+# Run DESeq pipeline for differences within genotypes
+design(dds) <- formula(~ colony.group)
+dsr1 <- DESeq(dds)
+
+genet=results(dsr1) # factor genet
+summary(genet) # look at how many DEGs there are and how many low-expressed genes ("low counts") had to be removed
+degs.genet=row.names(genet)[genet$padj<0.1 & !(is.na(genet$padj))]
+length(degs.genet)
+
+DE <- crossing(colony = as.character(sdat$genotype), num = "LP15", den = "LP40") %>%
+  mutate(dsr = pmap(list(colony, num, den), function(x, y, z) {
+    results(dsr1, contrast = c("colony.group", paste0(x, ".", c(y, z))))}))
+
+# Run DESeq pipeline for differences between sites
+design(dds) <- formula(~ genotype + site)
+dsr2 <- DESeq(dds)
+
+depth=results(dsr2) # factor genet
+summary(depth) # look at how many DEGs there are and how many low-expressed genes ("low counts") had to be removed
+degs.depth=row.names(depth)[depth$padj<0.1 & !(is.na(depth$padj))]
+length(degs.depth)
+
+# Get DESeq results for all contrasts ds1 and ds2
+
+DE <- crossing(colony = "all", num = "LP15", den = "LP40") %>%
+  mutate(dsr = map2(num, den, ~ results(dsr2, contrast = c("site", .x, .y)))) %>% bind_rows(DE)
+
+# Get significant DEGs
+DE <- DE %>%
+  mutate(sig = map(dsr, ~ rownames_to_column(data.frame(.[which(.$padj < 0.1), ]), "gene")),
+          up = map(sig, ~ filter(., log2FoldChange > 0)),
+        down = map(sig, ~ filter(., log2FoldChange < 0))) 
+
+# Generate logP values for all differential expression contrasts
+DE <- DE %>% mutate(logP = map(dsr, ~ data.frame(
+  gene = rownames(data.frame(.)),
+  logP = -log10(data.frame(.)$pvalue) * sign(data.frame(.)$log2FoldChange))))
+
+# Count number of differentially expressed genes within each colony, and overall, for each contrast
+DEtab <- DE %>%
+  mutate(nsig = map_dbl( sig, ~ nrow(.)),
+          nup = map_dbl(  up, ~ nrow(.)),
+          ndn = map_dbl(down, ~ nrow(.)),
+          `DEGs [up, down]` = paste0(nsig, " [", nup, ", ", ndn, "]")) %>%
+  select(colony, num, den, `DEGs [up, down]`) %>%
+  spread(colony, `DEGs [up, down]`)
+
+colnames(DEtab) <- c("","","all genets", "C1683", "C1691", "C1701", "C1703", "C1708", "C1713", "C1722", "C1725", "C1727", "C1732", "C1733", "C1741")
+
+# density plots: are my DEGs high-abundant or low-abundant?
+
+means=apply(vsd2,1,mean)
+
+plot(density(means),bty="n",yaxt="n",ylab="",xlab="mean log2(count)",main="")
+lines(density(means[degs.genet]),col="blue")
+lines(density(means[degs.depth]),col="red")
+legend("topright",legend=c("all","genet","depth"),col=c("black","blue","red"),lty=1,cex=0.8,bty="n")
+
+plot(density(genet$log2FoldChange))
+lines(density(depth$log2FoldChange),col="red")
+
+plot(genet$log2FoldChange~depth$log2FoldChange,pch=16,cex=0.5)
+
+```
+
+```{r Summary DEG}
+dek <- DEtab %>% select(3:15) %>%
+  knitr::kable(format = "markdown", caption = "Number of differentially expressed genes within individual genets and across all genets for each specified contrast. DEGs identified using DESeq with an adjusted p-value < 0.1. In brackets are the numbers of significantly up- and down-regulated genes.")
+
+dek
+
+DEGs <- DE %>%
+  unnest(sig) %>%
+  filter(colony == "all") %>%
+  select(gene)
+
+iso2gene <- read_delim(file = "data/ACER_Transcriptome(Libro_etal_2013)/a.cervicornis_Libro etal 2013_annot_Matz/acer_iso2gene.tab", delim = "\t", col_names = FALSE)
+colnames(iso2gene) <- c("gene","annot")
+DEGs_annot <- merge(DEGs, iso2gene, by = "gene")
+
+write_delim(DEGs_annot, "output/DEGs_all_genets.tsv", delim = "\t", col_names = TRUE)
+
+#lipid_genes <- read_delim("output/DEGs_lipid.synthesis.txt", delim = "\t")
+#lipid_genes <- merge(lipid_genes, all_logP, by = "gene")
+
+```
+
+
+```{r DEGs in common across genets}
+# Find genes that are DE in same direction in multiple genets when analyzed individually
+shared_DEG <- DE %>%
+  unnest(sig) %>%
+  filter(colony != "all") %>%
+  count(gene, log2FoldChange > 0) %>%   # In how many genets is same gene DE in same direction?
+  summarise(`1 genet` = sum(n==1), `2 genets` = sum(n==2), `3 genets` = sum(n==3), `4 genets` = sum(n==4), `5 genets` = sum(n==5)) 
+
+knitr::kable(shared_DEG, format = "markdown", caption = "Number of differentially expressed genes in common")
+
+
+```
+
+### Visualize transcriptome with DEGs only
+```{r Principal Coordinates Analysis}
+countsDEGs <- subset(counts, rownames(counts) %in% DEGs$gene)
+
+dds.DEGs <- DESeqDataSetFromMatrix(countData = countsDEGs,
+                              colData = sdat,
+                              design = ~ genotype+depth)
+
+vsd.DEGs <- varianceStabilizingTransformation(dds.DEGs, blind = TRUE)
+
+## Calculate distances among samples
+sampleDists <- dist(t(assay(vsd.DEGs)), method = "manhattan")
+sampleDistMatrix <- as.matrix(sampleDists)
+
+## Calculate MDS
+mds <- as.data.frame(colData(vsd.DEGs)) %>% 
+  cbind(cmdscale(sampleDistMatrix)) %>% 
+  mutate(alphaval = ifelse(site == "LP15", 1, 0))
+
+# Calculate group centroids for plotting
+mds <- mds %>%
+  group_by(site) %>%
+  dplyr::summarise(c1 = mean(`1`), c2 = mean(`2`)) %>%    
+  full_join(mds)
+
+# Calculate variance explained by each PC
+MDS <- cmdscale(sampleDistMatrix, eig = TRUE)
+vexpl <- round(MDS$eig*100/sum(MDS$eig),1)[1:2]
+
+# Plot with spiders
+pcoa <- ggplot(mds, aes(color = genotype, shape = site)) +
+  geom_segment(mapping = aes(x = `1`, y = `2`, xend = c1, yend = c2), lwd = 0.25, col = "grey") +
+  geom_point(size = 2, aes(x = c1, y = c2), col = "black", show.legend = FALSE) +
+  geom_point(size = 0.7, aes(x = `1`, y = `2`)) +
+  scale_shape_discrete(name = "Depth", labels = c("deep", "shallow")) +
+  scale_color_discrete(name = "Genet",) +
+  labs(x = paste0("PC1 [", vexpl[1],"%]"), y = paste0("PC2 [", vexpl[2],"%]")) +
+  theme_custom() +
+  theme(legend.spacing = unit(0, "cm"), legend.key.size = unit(0.7, 'lines')) +
+  guides(fill=guide_legend(ncol=2)) 
+
+pcoa
+
+ggsave(filename = "output/Fig.pcoa_DEGs.png",pcoa, width = 109, height = 84.5, units = "mm")
+
+```
+
+## GO enrichment
+```{r GO enrichment}
+
+# Write logP values to file for GO_MWU analysis
+DE %>%
+  filter(colony == "all", num == "LP15", den == "LP40") %>%
+  unnest(logP) %>%
+  select(gene, logP) %>%
+  write.table(., file = "data/GO_MWU/all.logP.txt", row.names = FALSE, quote = FALSE, sep = ",")
+```
+
+```{r}
+# Run GO_MWU for all-colony for Biological Process (BP) GO terms
+commandArgs <- function(...) c("all.logP.txt", "BP")
+source("data/GO_MWU/GO_MWU.R")
+```
+
+```{r}
+# Run GO_MWU for all-colony for Molecular Function GO terms
+commandArgs <- function(...) c("all.logP.txt", "MF")
+source("data/GO_MWU/GO_MWU.R")
+```
+
+```{r}
+
+# Run GO_MWU for all-colony  Cellular Component (CC) GO terms
+commandArgs <- function(...) c("all.logP.txt", "CC")
+source("data/GO_MWU/GO_MWU.R")
+
+```
+
+```{r}
+# Get list of all significant GO terms for contrast
+all.GO <- as.list(
+  c(BP = "data/GO_MWU/MWU_BP_all.logP.txt",
+    MF = "data/GO_MWU/MWU_MF_all.logP.txt",
+    CC = "data/GO_MWU/MWU_CC_all.logP.txt")
+  ) %>% map(read.table, header = T) %>%
+  bind_rows(.id = "ontology") %>%
+  as_tibble() %>%
+  filter(p.adj < 0.01) %>%
+  select(ontology, nseqs, name, delta.rank, p.adj)
+
+# Get list of individual genes with GO annotations and p-values for contrast
+allgenepvals <- as.list(
+  c(BP = "data/GO_MWU/BP_all.logP.txt",
+    MF = "data/GO_MWU/MF_all.logP.txt",
+    CC = "data/GO_MWU/CC_all.logP.txt")
+  ) %>% map(read_tsv) %>%
+  bind_rows(.id = "ontology")
+
+# For all significant GO terms, count how many genes with that GO term have raw pvalue < 0.05 (= "nsig")
+all.GO <- all.GO %>%
+  mutate(nsig = map_dbl(name, function(.) {
+    filter(allgenepvals, name == ., -abs(value) <= log10(0.05)) %>%
+    nrow(.)
+  }))
+  
+# Print table
+(gotable <- all.GO %>%
+  unite("genes", nsig, nseqs, sep = "/") %>%
+  arrange(ontology, delta.rank) %>%
+  knitr::kable())
+
+write_tsv(all.GO %>%
+  unite("genes", nsig, nseqs, sep = "/") %>%
+  arrange(ontology, delta.rank), "output/goout.txt")
+```
+
+# Run Matz code to create gomwuplot
+```{r}
+# Run Matz code to create gomwuplot
+setwd("data/GO_MWU/")
+bp <- gomwuPlot(inFile = "all.logP.txt", 
+   goDivision = "BP", goAnnotations = "acer_iso2go.tab")
+cc <- gomwuPlot(inFile = "all.logP.txt", 
+   goDivision = "CC", goAnnotations = "acer_iso2go.tab")
+mf <- gomwuPlot(inFile = "all.logP.txt", 
+   goDivision = "MF", goAnnotations = "acer_iso2go.tab")
+
+```
+
+KOG enrichment
+
+```{r}
+# Import KOG annotations for Mcavernosa genome # Downloaded from M. Studivan github
+gene2kog <- read.table("data/ACER_Transcriptome(Libro_etal_2013)/a.cervicornis_Libro etal 2013_annot_Matz/acer_iso2kogClass.tab", sep = "\t") %>% 
+   filter(!V2 == "")
+
+# Run KOG.MWU analysis on all contrasts
+KOG <- DE %>%
+  mutate(KOG = map(logP, ~ kog.mwu(., gene2kog)),
+         # If a KOG term has <10 genes associated with it, set delta rank to zero
+         KOG = map(KOG, ~ mutate(., delta.rank = ifelse(nseqs < 10, 0, delta.rank))))
+
+# Generate all KOG delta rank tables
+kogtables <- KOG %>%
+  mutate(genet = case_when(colony == "C1683" ~ "genet 1", 
+                           colony == "C1691" ~ "genet 2", 
+                           colony == "C1701" ~ "genet 3",
+                           colony == "C1703" ~ "genet 4",
+                           colony == "C1708" ~ "genet 5",
+                           colony == "C1713" ~ "genet 6",
+                           colony == "C1722" ~ "genet 7",
+                           colony == "C1725" ~ "genet 8",
+                           colony == "C1727" ~ "genet 9",
+                           colony == "C1732" ~ "genet 10",
+                           colony == "C1733" ~ "genet 11",
+                           colony == "C1741" ~ "genet 12",
+                           colony == "all" ~ "all genets")) %>%
+  mutate(genet = factor(genet, levels = c("genet 1","genet 2","genet 3","genet 4",
+                                          "genet 5","genet 6","genet 7", "genet 8",
+                                          "genet 9", "genet 10","genet 11","genet 12","all genets"))) %>%
+  unnest(KOG) %>%
+  select(genet, num, den, term, delta.rank) %>%
+  split(list(.$num, .$den), drop = TRUE) %>%
+  map(~ spread(., genet, delta.rank)) %>%
+  map(~ column_to_rownames(select(., -num, -den), "term"))
+
+# Generate KOG p-value stars
+kogpvals <- KOG %>%
+    mutate(genet = case_when(colony == "C1683" ~ "genet 1", 
+                           colony == "C1691" ~ "genet 2", 
+                           colony == "C1701" ~ "genet 3",
+                           colony == "C1703" ~ "genet 4",
+                           colony == "C1708" ~ "genet 5",
+                           colony == "C1713" ~ "genet 6",
+                           colony == "C1722" ~ "genet 7",
+                           colony == "C1725" ~ "genet 8",
+                           colony == "C1727" ~ "genet 9",
+                           colony == "C1732" ~ "genet 10",
+                           colony == "C1733" ~ "genet 11",
+                           colony == "C1741" ~ "genet 12",
+                           colony == "all" ~ "all genets")) %>%
+  mutate(genet = factor(genet, levels = c("genet 1","genet 2","genet 3","genet 4",
+                                          "genet 5","genet 6","genet 7", "genet 8",
+                                          "genet 9", "genet 10","genet 11","genet 12","all genets"))) %>%
+  unnest(KOG) %>%
+  select(genet, num, den, term, padj) %>%
+  split(list(.$num, .$den), drop = TRUE) %>%
+  map(~ spread(., genet, padj)) %>%
+  map(~ column_to_rownames(select(., -num, -den), "term")) %>%
+  map(~ transmute_all(., gtools::stars.pval))
+
+# Function to plot KOG delta ranks heatmap
+KOGheatmap <- function(deltaranks, pvals, ...) {
+  deltaranks <- as.matrix(deltaranks)
+  paletteLength <- 100
+  myColor <- colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(paletteLength)
+  myBreaks <- c(seq(min(deltaranks), 0, length.out = ceiling(paletteLength/2) + 1), 
+                seq(max(deltaranks)/paletteLength, max(deltaranks), 
+                    length.out = floor(paletteLength/2)))
+  pheatmap(mat = deltaranks, display_numbers = pvals, fontsize_number = 8,
+           cluster_cols = FALSE, cluster_rows = FALSE,
+           treeheight_row = 15, treeheight_col = 15,
+           border_color = "white", scale = "none",
+           color = myColor, breaks = myBreaks, ...)
+}
+
+KOGfig <- KOGheatmap(kogtables$LP15.LP40, kogpvals$LP15.LP40, fontsize = 8)
+
+ggsave(filename = "output/KOG_heatmap.png", KOGfig, width = 169, height = 84.5, units = "mm")
+
+```
+
+```{r}
+kogout <- KOG %>%
+  unnest(KOG) %>%
+  filter(colony == "all") %>%
+  unite("contrast", num, den, sep = ".") %>%
+  select(dsr, term, nseqs, delta.rank, padj)
+  
+
+kogout <- kogout %>%
+  mutate(nsig = map2_dbl(term, dsr, function(.x, .y) {
+    geneswithterm <- dplyr::filter(gene2kog, V2 == as.character(.x)) %>% pull(V1)
+    geneswithp <- rownames_to_column(data.frame(.y[which(.y$pvalue < 0.05), ]), "gene")
+    return(length(intersect(geneswithterm, geneswithp$gene)))
+  }))
+
+# Write table for supp info
+kogout <- kogout %>%
+  filter(padj < 0.1) %>%
+  unite("genes", nsig, nseqs, sep = "/") %>%
+  select(genes, term, delta.rank, padj) %>%
+  mutate(padj = signif(padj, digits = 3))
+
+write_tsv(kogout, "output/kogout.txt")
+
+k_table <- knitr::kable(kogout)  %>%
+  kable_styling(full_width = TRUE)
+```
+
+
+

@@ -1,0 +1,647 @@
+---
+title: "WGCNA analysis"
+author: "Javier Rodriguez Casariego"
+date: '2022-07-12'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '/Volumes/JARC_2T/Data_PhD/Rapid_Project/Clonal_divergence/ACER_clonal_divergence/TagSeq')
+```
+
+
+```{r install/load packages, include=FALSE}
+# Install if needed 
+#install.packages("BiocManager",repos="http://cran.us.r-project.org")
+#BiocManager::install(c("AnnotationDbi", "impute", "GO.db", "preprocessCore"))
+#install.packages("flashClust",repos="http://cran.us.r-project.org")
+#install.packages("WGCNA",dependencies=TRUE,repos="http://cran.us.r-project.org")
+
+library(WGCNA)
+library(flashClust)
+library(ape)
+library(stringr)
+library(tidyverse)
+library(readxl)
+library(DESeq2)
+library(Biobase)
+library(arrayQualityMetrics)
+library(pheatmap)
+options(stringsAsFactors=FALSE)
+allowWGCNAThreads()
+
+```
+
+```{r built dataset for WGCNA}
+#read in counts
+#counts = read.table("allcounts.txt")
+counts <- read.table("data/processed/aligned_transcriptome/counts_to_trans.txt",header = TRUE, row.names = 1)
+# Trim column names to just the sample name
+colnames(counts) <- str_sub(colnames(counts), 1, 7)
+# Order columns by sample name
+counts <- counts[, order(colnames(counts))]
+
+# Import sample metadata
+sdat0 <- read_xlsx("data/metadata_tag_seq_ACER.xlsx") %>%
+  mutate(colony.group = interaction(genotype, site)) %>%
+  mutate_if(is.character, as.factor)
+
+sdat <- sdat0 %>%
+  arrange(seq_ID) %>%                              # order rows by sample name
+  column_to_rownames(var = "Sample.ID")               # set sample name to rownames
+
+# distribution of total counts among samples: are there samples with less the 2 SD counts?
+#total counts for each sample
+smeans<-apply(counts,2,sum)
+lsm<-log(smeans,10)
+hist(lsm,breaks=12)
+sdl<-sd(lsm)
+bads<-which(mean(lsm)-lsm > 2*sdl)
+bads
+# Consider eliminating N68 pair (P169RNA and P171RNA)
+
+# Build dataset for WGCNA
+
+counts.means<-apply(counts,1,mean)
+
+counts4wgcna<-counts[which(counts.means>=10),]
+nrow(counts4wgcna)
+
+dds_4wgcna <- DESeqDataSetFromMatrix(countData = counts4wgcna,
+                              colData = sdat,
+                              design = ~ genotype+depth+genotype:depth)
+str(dds_4wgcna)
+#Vsd=varianceStabilizingTransformation(dds)
+Vsd=vst(dds_4wgcna)
+e=ExpressionSet(assay(Vsd), AnnotatedDataFrame(as.data.frame(colData(Vsd))))
+
+# running outlier detection
+setwd("/Volumes/JARC_2T/Data_PhD/Rapid_Project/Clonal_divergence/ACER_clonal_divergence/TagSeq/output")
+arrayQualityMetrics(e,intgroup=c("genotype","depth"),force=T)
+dev.off()
+# open the directory "arrayQualityMetrics report for e" and click on index.html
+
+## sample P171RNA was an outlier and is also the pair of the sample with low reads:
+outs <- c(2,3)
+counts4wgcna <- counts4wgcna[,-outs]
+sdat <- sdat[-outs,]
+dds_4wgcna <- DESeqDataSetFromMatrix(countData = counts4wgcna,
+                              colData = sdat,
+                              design = ~ genotype+depth+genotype:depth)
+Vsd=vst(dds_4wgcna)
+# generating normalized variance-stabilized data for WGCNA
+
+vsd.wg=assay(Vsd)
+snames <- c("N45_S","N85_D","N43_D","N45_D","N12_D","V41_S","N66_S","N11_D","N35_S","V57_S","N35_D","N43_S","N90_S","N11_S","N36_S","V57_D","N36_D","N66_D","N86_D","N90_D","N12_S","V41_D","N86_S","N85_S")
+colnames(vsd.wg)=snames
+datt=t(vsd.wg) 
+
+# assembling table of QUANTITATIVE traits: dummy quantitative variables instead of categorical factor levels:
+depth=as.numeric(sdat$depth=="shallow")
+C1683=as.numeric(sdat$genotype=="C1683")
+C1691=as.numeric(sdat$genotype=="C1691")
+C1701=as.numeric(sdat$genotype=="C1701")
+C1703=as.numeric(sdat$genotype=="C1703")
+C1708=as.numeric(sdat$genotype=="C1708")
+C1713=as.numeric(sdat$genotype=="C1713")
+C1722=as.numeric(sdat$genotype=="C1722")
+C1725=as.numeric(sdat$genotype=="C1725")
+C1727=as.numeric(sdat$genotype=="C1727")
+C1733=as.numeric(sdat$genotype=="C1733")
+C1741=as.numeric(sdat$genotype=="C1741")
+traits=data.frame(cbind(C1683,C1691,C1701,C1703,C1708,C1713,C1722,C1725,C1727,C1733,C1741,depth))
+traits
+
+save(vsd.wg,sdat,datt,traits,file="output/data4wgcna.RData")
+
+```
+
+```{r determine WGCNA parameters}
+
+# Try different betas ("soft threshold") - power foactor for calling connections between genes
+
+powers = c(seq(from = 2, to=26, by=2))
+# Call the network topology analysis function
+# *Decide if you want signed or unsigned network type
+sft = pickSoftThreshold(datt, powerVector = powers, verbose = 5,networkType="signed")
+
+# Plot the results:
+sizeGrWindow(9, 5)
+pdf("output/soft_threshold_signed.pdf",height=4, width=8)
+par(mfrow = c(1,2));
+cex1 = 0.9;
+# Scale-free topology fit index as a function of the soft-thresholding power
+plot(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n",
+main = paste("Scale independence"));
+text(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+labels=powers,cex=cex1,col="red");
+# this line corresponds to using an R^2 cut-off of h
+abline(h=0.90,col="red")
+# Mean connectivity as a function of the soft-thresholding power
+plot(sft$fitIndices[,1], sft$fitIndices[,5],
+xlab="Soft Threshold (power)",ylab="Mean Connectivity", type="n",
+main = paste("Mean connectivity"))
+text(sft$fitIndices[,1], sft$fitIndices[,5], labels=powers, cex=cex1,col="red")
+dev.off()
+
+#9 looks like the good threshold to use
+
+```
+## The next section is run in a cluster (see WGCNA_TOMandModules.R)
+## Back to local
+
+```{r WGCNA module analysis}
+
+load('output/1stPassModules.RData')
+load('output/data4wgcna.RData')
+
+MEDissThres = 0.2 # in the first pass, set this to 0 - no merging (we want to see the module-traits heatmap first, then decide which modules are telling us the same story and better be merged)
+sizeGrWindow(7, 6)
+plot(METree, main = "Clustering of module eigengenes",
+xlab = "", sub = "")
+# Plot the cut line into the dendrogram
+abline(h=MEDissThres, col = "red")  # on 2nd pass: does this cut height meet your merging goals? If not, reset MEDissThres and replot
+
+##To choose a threshold, the Height axis will show numbers where the modules will connect together
+
+# Call an automatic merging function
+merge = mergeCloseModules(datt, dynamicColors, cutHeight = MEDissThres, verbose = 3)
+# The merged module colors
+mergedColors = merge$colors;
+# Eigengenes of the new merged modules:
+mergedMEs = merge$newMEs
+
+# plotting the fabulous ridiculogram
+plotDendroAndColors(geneTree, cbind(dynamicColors, mergedColors),
+c("Dynamic Tree Cut", "Merged dynamic"),
+dendroLabels = FALSE, hang = 0.03,
+addGuide = FALSE, guideHang = 0.05,lwd=0.3)
+
+# Rename to moduleColors
+moduleColors = mergedColors
+# Construct numerical labels corresponding to the colors
+colorOrder = c("grey", standardColors(50));
+moduleLabels = match(moduleColors, colorOrder)-1;
+MEs = mergedMEs;
+
+# Calculate dissimilarity of module eigengenes
+MEDiss = 1-cor(MEs);
+# Cluster module eigengenes
+METree = flashClust(as.dist(MEDiss), method = "average");
+# Plot the result
+sizeGrWindow(7, 6)
+plot(METree, main = "Clustering of module eigengenes",
+xlab = "", sub = "")
+
+# how many genes in each module?
+table(moduleColors)
+# Save module colors and labels for use in subsequent parts
+# save(MEs, geneTree, moduleLabels, moduleColors, file = "output/networkdata_signed.RData")
+```
+
+```{r correlations between modules and traits}
+
+# plotting correlations with traits:
+load(file = "output/networkdata_signed.RData")
+load(file = "output/data4wgcna.RData")
+
+# Define numbers of genes and samples
+nGenes = ncol(datt);
+nSamples = nrow(datt);
+# Recalculate MEs with color labels
+MEs0 = moduleEigengenes(datt, moduleColors)$eigengenes
+MEs = orderMEs(MEs0)
+
+# correlations of genes with eigengenes
+moduleGeneCor=cor(MEs,datt)
+moduleGenePvalue = corPvalueStudent(moduleGeneCor, nSamples);
+
+moduleTraitCor = cor(MEs, traits, use = "p");
+moduleTraitPvalue = corPvalueStudent(moduleTraitCor, nSamples);
+
+# module-trait correlations
+pdf("output/module_heatmap.pdf", height=14, width=10)
+textMatrix = paste(signif(moduleTraitCor, 2), "\n(",
+signif(moduleTraitPvalue, 1), ")", sep = "");
+dim(textMatrix) = dim(moduleTraitCor)
+par(mar = c(6, 8.5, 3, 3));
+# Display the correlation values within a heatmap plot
+labeledHeatmap(Matrix = moduleTraitCor,
+xLabels = names(traits),
+yLabels = names(MEs),
+ySymbols = names(MEs),
+colorLabels = FALSE,
+colors = blueWhiteRed(50),
+textMatrix = textMatrix,
+setStdMargins = FALSE,
+cex.text = 0.5,
+zlim = c(-1,1),
+main = paste("Module-trait relationships"))
+dev.off()
+print(data.frame(table(moduleColors))) # gives numbers of genes in each module
+
+# if it was first pass with no module merging, this is where you examine your heatmap
+# and dendrogram of module eigengenes to see where you would like to see 
+# where you woudl like to set cut height (MEDissThres parameter) in the previous section
+# to merge modules that are talling the same story for your trait data
+
+# good way to do it is to find a group of similar modules in the heat map and then see 
+# at which tree height they connect in the dendrogram.
+```
+
+
+```{r}
+#############
+# scatterplots of gene significance (correlation-based) vs kME
+
+load(file = "output/networkdata_signed.RData")
+load(file = "output/data4wgcna.RData");
+traits
+table(moduleColors)
+whichTrait="depth"
+
+nGenes = ncol(datt);
+nSamples = nrow(datt);
+selTrait = as.data.frame(traits[,whichTrait]);
+names(selTrait) = whichTrait
+# names (colors) of the modules
+modNames = substring(names(MEs), 3)
+geneModuleMembership = as.data.frame(signedKME(datt, MEs));
+MMPvalue = as.data.frame(corPvalueStudent(as.matrix(geneModuleMembership), nSamples));
+names(geneModuleMembership) = paste("MM", modNames, sep="");
+names(MMPvalue) = paste("p.MM", modNames, sep="");
+geneTraitSignificance = as.data.frame(cor(datt, selTrait, use = "p"));
+GSPvalue = as.data.frame(corPvalueStudent(as.matrix(geneTraitSignificance), nSamples));
+names(geneTraitSignificance) = paste("GS.", names(selTrait), sep="");
+names(GSPvalue) = paste("p.GS.", names(selTrait), sep="");
+par(mfrow=c(3,3))
+counter=0
+for(module in modNames[1:length(modNames)]){
+counter=counter+1
+if (counter>9) {
+	par(mfrow=c(3,3))
+	counter=1
+}
+column = match(module, modNames);
+moduleGenes = moduleColors==module;
+#trr="heat resistance"
+verboseScatterplot(abs(geneModuleMembership[moduleGenes, column]),
+abs(geneTraitSignificance[moduleGenes, 1]),
+xlab = paste(module,"module membership"),
+ylab = paste("GS for", whichTrait),
+col = "grey50",mgp=c(2.3,1,0))
+}
+
+```
+
+```{r}
+################
+# eigengene-heatmap plot (sanity check - is the whole module driven by just one crazy sample?)
+# note: this part does not make much sense for unsigned modules
+
+load(file = "output/networkdata_signed.RData")
+load(file = "output/data4wgcna.RData");
+
+which.module="darkgreen" 
+datME=MEs
+datExpr=datt
+pdf(file = paste("output/",which.module,"_module_eigengene.pdf", sep = ""))
+ME=datME[, paste("ME",which.module, sep="")]
+par(mfrow=c(2,1), mar=c(0.3, 5.5, 3, 2))
+plotMat(t(scale(datExpr[,moduleColors==which.module ]) ),
+nrgcols=30,rlabels=F,rcols=which.module,
+main=which.module, cex.main=2)
+par(mar=c(5, 4.2, 0, 0.7))
+barplot(ME, col=which.module, main="", cex.main=2,
+ylab="eigengene expression",xlab="sample")
+dev.off()
+length(datExpr[1,moduleColors==which.module ]) # number of genes in chosen module
+
+
+which.module="plum" 
+datME=MEs
+datExpr=datt
+pdf(file = paste("output/",which.module,"_module_eigengene.pdf", sep = ""))
+ME=datME[, paste("ME",which.module, sep="")]
+par(mfrow=c(2,1), mar=c(0.3, 5.5, 3, 2))
+plotMat(t(scale(datExpr[,moduleColors==which.module ]) ),
+        nrgcols=30,rlabels=F,rcols=which.module,
+        main=which.module, cex.main=2)
+par(mar=c(5, 4.2, 0, 0.7))
+barplot(ME, col=which.module, main="", cex.main=2,
+        ylab="eigengene expression",xlab="sample")
+dev.off()
+length(datExpr[1,moduleColors==which.module ]) # number of genes in chosen module
+
+which.module="violet" 
+datME=MEs
+datExpr=datt
+pdf(file = paste("output/",which.module,"_module_eigengene.pdf", sep = ""))
+ME=datME[, paste("ME",which.module, sep="")]
+par(mfrow=c(2,1), mar=c(0.3, 5.5, 3, 2))
+plotMat(t(scale(datExpr[,moduleColors==which.module ]) ),
+        nrgcols=30,rlabels=F,rcols=which.module,
+        main=which.module, cex.main=2)
+par(mar=c(5, 4.2, 0, 0.7))
+barplot(ME, col=which.module, main="", cex.main=2,
+        ylab="eigengene expression",xlab="sample")
+dev.off()
+length(datExpr[1,moduleColors==which.module ]) # number of genes in chosen module
+
+
+# saving selected modules for GO and KOG analysis (two-parts: Fisher test, MWU test within-module)
+
+# calculating module memberships for all genes for all modules
+allkME =as.data.frame(signedKME(datt, MEs)) 
+names(allkME)=gsub("kME","",names(allkME))
+
+whichModule="darkgreen"
+table(moduleColors==whichModule) # how many genes are in it?
+
+# Saving data for Fisher-MWU combo test (GO_MWU)
+inModuleBinary=as.numeric(moduleColors==whichModule)
+combo=data.frame("gene"=row.names(vsd.wg),"Fish_kME"=allkME[,whichModule]*inModuleBinary)
+write.csv(combo,file=paste("data/GO_MWU/",whichModule,".csv",sep=""),row.names=F,quote=F)
+
+whichModule="plum"
+table(moduleColors==whichModule) # how many genes are in it?
+
+# Saving data for Fisher-MWU combo test (GO_MWU)
+inModuleBinary=as.numeric(moduleColors==whichModule)
+combo=data.frame("gene"=row.names(vsd.wg),"Fish_kME"=allkME[,whichModule]*inModuleBinary)
+write.csv(combo,file=paste("data/GO_MWU/",whichModule,".csv",sep=""),row.names=F,quote=F)
+
+whichModule="violet"
+table(moduleColors==whichModule) # how many genes are in it?
+
+# Saving data for Fisher-MWU combo test (GO_MWU)
+inModuleBinary=as.numeric(moduleColors==whichModule)
+combo=data.frame("gene"=row.names(vsd.wg),"Fish_kME"=allkME[,whichModule]*inModuleBinary)
+write.csv(combo,file=paste("data/GO_MWU/",whichModule,".csv",sep=""),row.names=F,quote=F)
+
+```
+
+```{r}
+
+################
+# plotting heatmap for named top-kME genes
+
+vsd.wg=t(datt) #<<<< add this line!
+allkME =as.data.frame(signedKME(datt, MEs))
+gg=read.table("data/ACER_Transcriptome(Libro_etal_2013)/a.cervicornis_Libro etal 2013_annot_Matz/acer_iso2gene.tab",sep="\t")
+
+whichModule="darkgreen"
+top=30 # number of named top-kME genes to plot
+
+datME=MEs
+datExpr=datt
+modcol=paste("kME",whichModule,sep="")
+sorted=vsd.wg[order(allkME[,modcol],decreasing=T),]
+head(sorted)
+# selection top N named genes, attaching gene names
+gnames=c();counts=0;hubs=c()
+for(i in 1:length(sorted[,1])) {
+	if (row.names(sorted)[i] %in% gg$V1) { 
+		counts=counts+1
+		gn=gg[gg$V1==row.names(sorted)[i],2]
+		gn=paste(gn,row.names(sorted)[i],sep=".")
+		if (gn %in% gnames) {
+			gn=paste(gn,counts,sep=".")
+		}
+		gnames=append(gnames,gn) 
+		hubs=data.frame(rbind(hubs,sorted[i,]))
+		if (counts==top) {break}
+	}
+} 
+gnames.short <- gsub(";.*$", "", gnames) 
+gnames.short[4] <- paste(gnames.short[4], "iso", sep = " ")
+row.names(hubs)=gnames.short
+
+contrasting = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+contrasting2 = colorRampPalette(rev(c("chocolate1","chocolate1","#FEE090","grey10", "cyan3","cyan","cyan")))(100)
+contrasting3 = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan","cyan")))(100)
+
+phmap <- pheatmap(hubs,scale="row",col=contrasting2,border_color=NA,treeheight_col=0.1,cex=0.9,cluster_rows=F)
+
+ggsave(filename="output/heatmap_module_darkgreen.png", phmap, width = 9, height = 5)
+
+## Plotting for plum 
+vsd.wg=t(datt) #<<<< add this line!
+allkME =as.data.frame(signedKME(datt, MEs))
+
+whichModule="plum"
+top=30 # number of named top-kME genes to plot
+
+datME=MEs
+datExpr=datt
+modcol=paste("kME",whichModule,sep="")
+sorted=vsd.wg[order(allkME[,modcol],decreasing=T),]
+head(sorted)
+# selection top N named genes, attaching gene names
+gnames=c();counts=0;hubs=c()
+for(i in 1:length(sorted[,1])) {
+	if (row.names(sorted)[i] %in% gg$V1) { 
+		counts=counts+1
+		gn=gg[gg$V1==row.names(sorted)[i],2]
+		gn=paste(gn,row.names(sorted)[i],sep=".")
+		if (gn %in% gnames) {
+			gn=paste(gn,counts,sep=".")
+		}
+		gnames=append(gnames,gn) 
+		hubs=data.frame(rbind(hubs,sorted[i,]))
+		if (counts==top) {break}
+	}
+} 
+gnames.short <- gsub(";.*$", "", gnames) 
+gnames.short[4] <- paste(gnames.short[4], "iso", sep = " ")
+row.names(hubs)=gnames.short
+
+contrasting = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+contrasting2 = colorRampPalette(rev(c("chocolate1","chocolate1","#FEE090","grey10", "cyan3","cyan","cyan")))(100)
+contrasting3 = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan","cyan")))(100)
+
+phmap <- pheatmap(hubs,scale="row",col=contrasting2,border_color=NA,treeheight_col=0.1,cex=0.9,cluster_rows=F)
+
+ggsave(filename="output/heatmap_module_plum.png", phmap, width = 9, height = 5)
+
+## Plotting for violet 
+vsd.wg=t(datt) #<<<< add this line!
+allkME =as.data.frame(signedKME(datt, MEs))
+
+whichModule="plum"
+top=30 # number of named top-kME genes to plot
+
+datME=MEs
+datExpr=datt
+modcol=paste("kME",whichModule,sep="")
+sorted=vsd.wg[order(allkME[,modcol],decreasing=T),]
+head(sorted)
+# selection top N named genes, attaching gene names
+gnames=c();counts=0;hubs=c()
+for(i in 1:length(sorted[,1])) {
+	if (row.names(sorted)[i] %in% gg$V1) { 
+		counts=counts+1
+		gn=gg[gg$V1==row.names(sorted)[i],2]
+		gn=paste(gn,row.names(sorted)[i],sep=".")
+		if (gn %in% gnames) {
+			gn=paste(gn,counts,sep=".")
+		}
+		gnames=append(gnames,gn) 
+		hubs=data.frame(rbind(hubs,sorted[i,]))
+		if (counts==top) {break}
+	}
+} 
+gnames.short <- gsub(";.*$", "", gnames) 
+gnames.short[4] <- paste(gnames.short[4], "iso", sep = " ")
+row.names(hubs)=gnames.short
+
+contrasting = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+contrasting2 = colorRampPalette(rev(c("chocolate1","chocolate1","#FEE090","grey10", "cyan3","cyan","cyan")))(100)
+contrasting3 = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan","cyan")))(100)
+
+phmap <- pheatmap(hubs,scale="row",col=contrasting2,border_color=NA,treeheight_col=0.1,cex=0.9,cluster_rows=F)
+
+ggsave(filename="output/heatmap_module_violet.png", phmap, width = 9, height = 5)
+##Remember, these plots with individual genes dont tell you anything (tea leaves)
+```
+
+# Functional enrichment analysis for significant modules
+
+```{r GO_MWU for darkgreen module}
+source("data/GO_MWU/gomwu.functions.R")
+
+wdir <- getwd()
+# Run GO_MWU for Biological Process (BP) GO terms
+commandArgs <- function(...) c("darkgreen.csv", "BP")
+source("data/GO_MWU/GO_MWU.R")
+
+setwd(wdir)
+# Run GO_MWU for Molecular Function GO terms
+commandArgs <- function(...) c("darkgreen.csv", "MF")
+source("data/GO_MWU/GO_MWU.R")
+
+setwd(wdir)
+# Run GO_MWU for all-colony  Cellular Component (CC) GO terms
+commandArgs <- function(...) c("darkgreen.csv", "CC")
+source("data/GO_MWU/GO_MWU.R")
+
+setwd(wdir)
+# Get list of all significant GO terms for contrast
+darkgreen.GO <- as.list(
+  c(BP = "data/GO_MWU/MWU_BP_darkgreen.csv",
+    MF = "data/GO_MWU/MWU_MF_darkgreen.csv",
+    CC = "data/GO_MWU/MWU_CC_darkgreen.csv")
+  ) %>% map(read.table, header = T) %>%
+  bind_rows(.id = "ontology") %>%
+  as_tibble() %>%
+  filter(p.adj < 0.01) %>%
+  select(ontology, nseqs, name, delta.rank, p.adj)
+
+# Get list of individual genes with GO annotations and p-values for contrast
+darkgreen.genepvals <- as.list(
+  c(BP = "data/GO_MWU/BP_darkgreen.csv",
+    MF = "data/GO_MWU/MF_darkgreen.csv",
+    CC = "data/GO_MWU/CC_darkgreen.csv")
+  ) %>% map(read_tsv) %>%
+  bind_rows(.id = "ontology")
+
+# For all significant GO terms, count how many genes with that GO term have raw pvalue < 0.05 (= "nsig")
+darkgreen.GO <- darkgreen.GO %>%
+  mutate(nsig = map_dbl(name, function(.) {
+    filter(darkgreen.genepvals, name == ., -abs(value) <= log10(0.05)) %>%
+    nrow(.)
+  }))
+  
+# Print table
+(gotable <- darkgreen.GO %>%
+  unite("genes", nsig, nseqs, sep = "/") %>%
+  arrange(ontology, delta.rank) %>%
+  knitr::kable())
+
+write_tsv(darkgreen.GO %>%
+  unite("genes", nsig, nseqs, sep = "/") %>%
+  arrange(ontology, delta.rank), "output/darkgreen_module_goout.txt")
+```
+
+# Run Matz code to create gomwuplot
+```{r}
+# Run Matz code to create gomwuplot
+setwd("data/GO_MWU/")
+bp <- gomwuPlot(inFile = "darkgreen.csv", 
+   goDivision = "BP", goAnnotations = "acer_iso2go.tab")
+cc <- gomwuPlot(inFile = "darkgreen.csv", 
+   goDivision = "CC", goAnnotations = "acer_iso2go.tab")
+mf <- gomwuPlot(inFile = "darkgreen.csv", 
+   goDivision = "MF", goAnnotations = "acer_iso2go.tab")
+
+```
+
+```{r GO_MWU for plum module}
+source("data/GO_MWU/gomwu.functions.R")
+
+wdir <- getwd()
+# Run GO_MWU for Biological Process (BP) GO terms
+commandArgs <- function(...) c("plum.csv", "BP")
+source("data/GO_MWU/GO_MWU.R")
+
+setwd(wdir)
+# Run GO_MWU for Molecular Function GO terms
+commandArgs <- function(...) c("plum.csv", "MF")
+source("data/GO_MWU/GO_MWU.R")
+
+setwd(wdir)
+# Run GO_MWU for all-colony  Cellular Component (CC) GO terms
+commandArgs <- function(...) c("plum.csv", "CC")
+source("data/GO_MWU/GO_MWU.R")
+
+setwd(wdir)
+# Get list of all significant GO terms for contrast
+plum.GO <- as.list(
+  c(BP = "data/GO_MWU/MWU_BP_plum.csv",
+    MF = "data/GO_MWU/MWU_MF_plum.csv",
+    CC = "data/GO_MWU/MWU_CC_plum.csv")
+  ) %>% map(read.table, header = T) %>%
+  bind_rows(.id = "ontology") %>%
+  as_tibble() %>%
+  filter(p.adj < 0.01) %>%
+  select(ontology, nseqs, name, delta.rank, p.adj)
+
+# Get list of individual genes with GO annotations and p-values for contrast
+plum.genepvals <- as.list(
+  c(BP = "data/GO_MWU/BP_plum.csv",
+    MF = "data/GO_MWU/MF_plum.csv",
+    CC = "data/GO_MWU/CC_plum.csv")
+  ) %>% map(read_tsv) %>%
+  bind_rows(.id = "ontology")
+
+# For all significant GO terms, count how many genes with that GO term have raw pvalue < 0.05 (= "nsig")
+plum.GO <- plum.GO %>%
+  mutate(nsig = map_dbl(name, function(.) {
+    filter(plum.genepvals, name == ., -abs(value) <= log10(0.05)) %>%
+    nrow(.)
+  }))
+  
+# Print table
+(gotable <- plum.GO %>%
+  unite("genes", nsig, nseqs, sep = "/") %>%
+  arrange(ontology, delta.rank) %>%
+  knitr::kable())
+
+write_tsv(plum.GO %>%
+  unite("genes", nsig, nseqs, sep = "/") %>%
+  arrange(ontology, delta.rank), "output/plum_module_goout.txt")
+```
+# Run Matz code to create gomwuplot
+```{r}
+# Run Matz code to create gomwuplot
+setwd("data/GO_MWU/")
+bp <- gomwuPlot(inFile = "plum.csv", 
+   goDivision = "BP", goAnnotations = "acer_iso2go.tab")
+#cc <- gomwuPlot(inFile = "plum.csv", 
+   #goDivision = "CC", goAnnotations = "acer_iso2go.tab")
+mf <- gomwuPlot(inFile = "plum.csv", 
+   goDivision = "MF", goAnnotations = "acer_iso2go.tab")
+
+```
