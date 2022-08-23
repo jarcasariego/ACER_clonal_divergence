@@ -1,0 +1,27 @@
+ontology	genes	name	delta.rank	p.adj
+BP	0/11	cellular lipid catabolic process	211	0.00662987560765847
+BP	0/11	organophosphate catabolic process	211	0.00662987560765847
+BP	0/10	membrane lipid metabolic process	233	0.00424513957587627
+BP	0/7	phospholipid catabolic process	339	1.0677662885526e-4
+BP	0/6	obsolete protein import into nucleus, docking	396	2.00555459103711e-5
+BP	0/6	sphingolipid metabolic process	398	2.00555459103711e-5
+CC	0/9	nuclear pore	90	1.50129983045283e-4
+CC	0/8	meprin A complex	102	6.02452195582652e-5
+MF	0/42	ligase activity, forming carbon-sulfur bonds	140	0.00675242475238301
+MF	0/34	acid-thiol ligase activity	177	0.00113443487241224
+MF	0/12	obsolete inositol or phosphatidylinositol phosphatase activity	258	0.0076851797254191
+MF	0/12	RNA polymerase II-specific DNA-binding transcription factor binding	261	0.0069163122330802
+MF	0/11	protein prenyltransferase activity	283	0.0042219072998243
+MF	0/10	peptide receptor activity	313	0.00188019664258401
+MF	0/10	obsolete membrane alanyl aminopeptidase activity	315	0.00185202735655816
+MF	0/10	hexose transmembrane transporter activity	316	0.00185202735655816
+MF	0/9	inositol phosphate phosphatase activity	349	9.44769186397928e-4
+MF	0/8	nucleotidase activity	395	2.77646116706653e-4
+MF	0/7	aminopeptidase activity	454	5.6520021058349e-5
+MF	0/7	protein geranylgeranyltransferase activity	455	5.6520021058349e-5
+MF	0/7	neuropeptide Y receptor activity	455	5.6520021058349e-5
+MF	0/7	obsolete glutamyl aminopeptidase activity	458	5.6520021058349e-5
+MF	0/5	Rab geranylgeranyltransferase activity	645	4.64494981080881e-7
+MF	0/5	sulfurtransferase activity	646	4.64494981080881e-7
+MF	0/5	sphingomyelin phosphodiesterase activity	647	4.64494981080881e-7
+MF	0/5	aryl hydrocarbon receptor binding	650	4.64494981080881e-7

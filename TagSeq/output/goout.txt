@@ -1,31 +1,30 @@
 ontology	genes	name	delta.rank	p.adj
-BP	34/279	ribonucleoprotein complex biogenesis	-1887	7.23508230716338e-45
-BP	5/23	one-carbon metabolic process	-1761	0.00293698680009337
-BP	3/39	nucleoside diphosphate metabolic process	-1253	0.00724049727603246
-BP	8/110	purine-containing compound metabolic process	-959	1.78027183215528e-4
-BP	57/670	cellular component organization or biogenesis	-920	3.83688655388849e-24
-BP	7/75	ATP metabolic process	-903	0.00724049727603246
-BP	77/999	macromolecule biosynthetic process	-631	4.23717521126761e-16
-BP	23/306	peptide transport	-528	0.00115749316293579
-BP	15/234	cellular localization	-521	0.00724049727603246
-BP	31/444	small molecule metabolic process	-423	0.00223192801883748
-BP	31/409	organic substance transport	-388	0.00873887986663219
-BP	30/361	G protein-coupled receptor signaling pathway	621	5.47966209218383e-6
-CC	28/246	ribosomal subunit	-528	1.47263786514511e-26
-CC	10/63	supramolecular fiber	-520	1.69277933012102e-7
-CC	16/145	large ribosomal subunit	-518	7.03318381841675e-16
-CC	12/89	small ribosomal subunit	-514	4.61939883516837e-10
-CC	6/38	microtubule	-494	3.1630405363823e-4
-CC	47/494	ribonucleoprotein complex	-296	3.34769649163245e-15
-CC	21/327	transferase complex	146	0.00490892552014823
-CC	4/115	extracellular region	275	6.52573954138977e-4
-CC	1/74	synapse part	298	0.00380384648983485
-CC	1/14	DNA replication factor C complex	683	0.00380384648983485
-MF	32/345	structural constituent of ribosome	-1869	1.81348264751031e-29
-MF	45/497	structural molecule activity	-1569	1.81348264751031e-29
-MF	14/111	cytoskeletal protein binding	-1106	0.00539391259580095
-MF	27/208	isomerase activity	-815	0.00539391259580095
-MF	24/299	guanyl ribonucleotide binding	-769	0.00101033874915488
-MF	31/440	ATPase activity	629	0.00101033874915488
-MF	23/263	obsolete rhodopsin-like receptor activity	804	0.00101033874915488
-MF	12/234	helicase activity	899	6.22632226807683e-4
+BP	34/332	ribonucleoprotein complex biogenesis	-2650	2.86932682222536e-50
+BP	5/27	one-carbon metabolic process	-2361	0.00333124174107387
+BP	57/882	cellular component organization or biogenesis	-1145	1.73534663648811e-23
+BP	8/198	purine-containing compound metabolic process	-1056	1.45111738651493e-4
+BP	7/131	ATP metabolic process	-1013	0.00692569351427877
+BP	77/1372	organonitrogen compound biosynthetic process	-801	5.22309020090847e-17
+BP	15/306	cellular localization	-673	0.00692569351427877
+BP	23/401	peptide transport	-658	0.00150265093118692
+BP	32/727	small molecule metabolic process	-556	1.76846838691266e-4
+BP	29/573	G protein-coupled receptor signaling pathway	727	4.15485952696671e-6
+CC	12/106	small ribosomal subunit	-730	7.49285436005712e-12
+CC	28/319	cytosolic part	-677	5.89058158648283e-28
+CC	16/180	large ribosomal subunit	-674	1.20883815043315e-16
+CC	10/102	polymeric cytoskeletal fiber	-463	1.12976403637907e-4
+CC	47/611	non-membrane-bounded organelle	-413	3.1428019845204e-18
+CC	1/129	synapse part	344	0.00225415428280124
+CC	4/153	extracellular region	357	3.44697870474525e-4
+CC	1/15	DNA replication factor C complex	906	0.00722339545105079
+MF	32/428	structural constituent of ribosome	-2512	3.43784390124296e-31
+MF	45/648	structural molecule activity	-1960	1.68222203468523e-28
+MF	10/105	cis-trans isomerase activity	-1760	0.00358743698973053
+MF	10/95	actin binding	-1662	0.00914382006104142
+MF	14/136	cytoskeletal protein binding	-1459	0.00658374709063309
+MF	24/404	GTP binding	-941	0.00251348123137124
+MF	28/333	isomerase activity	-940	0.00658374709063309
+MF	46/1055	signaling receptor activity	526	0.00914382006104142
+MF	30/763	ATPase activity	601	0.00914382006104142
+MF	11/391	helicase activity	828	0.00914382006104142
+MF	22/442	obsolete rhodopsin-like receptor activity	862	0.00358743698973053

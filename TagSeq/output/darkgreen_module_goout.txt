@@ -1,10 +1,10 @@
 ontology	genes	name	delta.rank	p.adj
 BP	0/267	obsolete electron transport	108	2.36847686397581e-5
 BP	0/33	cofactor metabolic process	256	4.90854132728424e-4
-BP	0/23	cellular macromolecule localization	275	0.00273621341868213
+BP	0/23	cellular protein localization	275	0.00273621341868213
 BP	0/10	pigment metabolic process	452	7.2687656796888e-4
-BP	0/9	porphyrin-containing compound metabolic process	507	2.86030339705247e-4
-BP	0/9	electron transport chain	511	2.86030339705247e-4
+BP	0/9	tetrapyrrole metabolic process	507	2.86030339705247e-4
+BP	0/9	respiratory electron transport chain	511	2.86030339705247e-4
 BP	0/7	protein insertion into membrane	657	2.36847686397581e-5
 BP	0/6	heme metabolic process	783	2.64307757225375e-6
 CC	0/17	mitochondrion	90	0.0033898878991998
@@ -22,4 +22,4 @@ MF	0/7	deoxyribodipyrimidine photo-lyase activity	878	4.91830356176201e-5
 MF	0/7	dTDP-glucose 4,6-dehydratase activity	888	4.12748479941016e-5
 MF	0/6	retinol dehydrogenase activity	1053	4.07008616912715e-6
 MF	0/8	oxidoreductase activity, acting on the CH-CH group of donors, quinone or related compound as acceptor	1183	5.223292994066e-10
-MF	0/5	butyryl-CoA dehydrogenase activity	1266	2.77588087340045e-7
+MF	0/5	oxidoreductase activity, acting on the CH-CH group of donors, with a flavin as acceptor	1266	2.77588087340045e-7

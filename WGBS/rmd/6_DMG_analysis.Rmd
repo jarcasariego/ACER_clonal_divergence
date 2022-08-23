@@ -207,7 +207,7 @@ sub_meth_table$per.meth <- (sub_meth_table$meth/(sub_meth_table$meth+sub_meth_ta
 # Annotation of DMG between sites
 DMG_annot <- merge(sig_genes , Annot_full, by="gene_id", all.x=TRUE)
 DMG_annot <- DMG_annot[order(DMG_annot$adj.pval),]
-DMG_annot <- DMG_annot[!duplicated(DMG_annot$gene),]
+DMG_annot <- DMG_annot[!duplicated(DMG_annot$gene_id),]
 write.table(DMG_annot, 'output/Table_S1_DMG_annot.tsv', sep='\t', row.names=FALSE)
 
 genelist_DMGs <- DMG_annot$iso

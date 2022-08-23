@@ -157,7 +157,7 @@ dev.off()
 load('output/1stPassModules.RData')
 load('output/data4wgcna.RData')
 
-MEDissThres = 0.2 # in the first pass, set this to 0 - no merging (we want to see the module-traits heatmap first, then decide which modules are telling us the same story and better be merged)
+MEDissThres = 0.25 # in the first pass, set this to 0 - no merging (we want to see the module-traits heatmap first, then decide which modules are telling us the same story and better be merged)
 sizeGrWindow(7, 6)
 plot(METree, main = "Clustering of module eigengenes",
 xlab = "", sub = "")
@@ -198,7 +198,7 @@ xlab = "", sub = "")
 # how many genes in each module?
 table(moduleColors)
 # Save module colors and labels for use in subsequent parts
-# save(MEs, geneTree, moduleLabels, moduleColors, file = "output/networkdata_signed.RData")
+save(MEs, geneTree, moduleLabels, moduleColors, file = "output/networkdata_signed.RData")
 ```
 
 ```{r correlations between modules and traits}
@@ -220,12 +220,11 @@ moduleGenePvalue = corPvalueStudent(moduleGeneCor, nSamples);
 
 moduleTraitCor = cor(MEs, traits, use = "p");
 moduleTraitPvalue = corPvalueStudent(moduleTraitCor, nSamples);
+moduleTraitStars = cut(moduleTraitPvalue, breaks=c(-Inf, 0.001, 0.01, 0.05, Inf), label=c("***", "**", "*", "")) 
 
 # module-trait correlations
 pdf("output/module_heatmap.pdf", height=14, width=10)
-textMatrix = paste(signif(moduleTraitCor, 2), "\n(",
-signif(moduleTraitPvalue, 1), ")", sep = "");
-dim(textMatrix) = dim(moduleTraitCor)
+textMatrix = moduleTraitStars;
 par(mar = c(6, 8.5, 3, 3));
 # Display the correlation values within a heatmap plot
 labeledHeatmap(Matrix = moduleTraitCor,
@@ -236,19 +235,36 @@ colorLabels = FALSE,
 colors = blueWhiteRed(50),
 textMatrix = textMatrix,
 setStdMargins = FALSE,
-cex.text = 0.5,
+cex.text = 1.5,
 zlim = c(-1,1),
 main = paste("Module-trait relationships"))
 dev.off()
 print(data.frame(table(moduleColors))) # gives numbers of genes in each module
 
-# if it was first pass with no module merging, this is where you examine your heatmap
-# and dendrogram of module eigengenes to see where you would like to see 
-# where you woudl like to set cut height (MEDissThres parameter) in the previous section
-# to merge modules that are talling the same story for your trait data
 
-# good way to do it is to find a group of similar modules in the heat map and then see 
-# at which tree height they connect in the dendrogram.
+# Keep only depth
+moduleTraitCor = cor(MEs, traits$depth, use = "p");
+moduleTraitPvalue = corPvalueStudent(moduleTraitCor, nSamples);
+moduleTraitStars = cut(moduleTraitPvalue, breaks=c(-Inf, 0.001, 0.01, 0.05, Inf), label=c("***", "**", "*", "")) 
+
+# module-trait correlations
+pdf("output/depth_module_heatmap.pdf", height=12, width=4)
+textMatrix = moduleTraitStars;
+par(mar = c(6, 8.5, 3, 3));
+# Display the correlation values within a heatmap plot
+labeledHeatmap(Matrix = moduleTraitCor,
+xLabels = "depth",
+yLabels = names(MEs),
+ySymbols = names(MEs),
+colorLabels = FALSE,
+colors = blueWhiteRed(50),
+textMatrix = textMatrix,
+setStdMargins = FALSE,
+cex.text = 1.5,
+zlim = c(-1,1),
+main = paste("Module-trait relationships"))
+dev.off()
+print(data.frame(table(moduleColors)))
 ```
 
 
@@ -470,7 +486,7 @@ ggsave(filename="output/heatmap_module_plum.png", phmap, width = 9, height = 5)
 vsd.wg=t(datt) #<<<< add this line!
 allkME =as.data.frame(signedKME(datt, MEs))
 
-whichModule="plum"
+whichModule="violet"
 top=30 # number of named top-kME genes to plot
 
 datME=MEs
@@ -494,7 +510,7 @@ for(i in 1:length(sorted[,1])) {
 	}
 } 
 gnames.short <- gsub(";.*$", "", gnames) 
-gnames.short[4] <- paste(gnames.short[4], "iso", sep = " ")
+gnames.short[7] <- paste(gnames.short[7], "iso", sep = " ")
 row.names(hubs)=gnames.short
 
 contrasting = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
@@ -642,6 +658,74 @@ bp <- gomwuPlot(inFile = "plum.csv",
 #cc <- gomwuPlot(inFile = "plum.csv", 
    #goDivision = "CC", goAnnotations = "acer_iso2go.tab")
 mf <- gomwuPlot(inFile = "plum.csv", 
+   goDivision = "MF", goAnnotations = "acer_iso2go.tab")
+
+```
+```{r GO_MWU for violet module}
+source("data/GO_MWU/gomwu.functions.R")
+
+wdir <- getwd()
+# Run GO_MWU for Biological Process (BP) GO terms
+commandArgs <- function(...) c("violet.csv", "BP")
+source("data/GO_MWU/GO_MWU.R")
+
+setwd(wdir)
+# Run GO_MWU for Molecular Function GO terms
+commandArgs <- function(...) c("violet.csv", "MF")
+source("data/GO_MWU/GO_MWU.R")
+
+setwd(wdir)
+# Run GO_MWU for all-colony  Cellular Component (CC) GO terms
+commandArgs <- function(...) c("violet.csv", "CC")
+source("data/GO_MWU/GO_MWU.R")
+
+setwd(wdir)
+# Get list of all significant GO terms for contrast
+violet.GO <- as.list(
+  c(BP = "data/GO_MWU/MWU_BP_violet.csv",
+    MF = "data/GO_MWU/MWU_MF_violet.csv",
+    CC = "data/GO_MWU/MWU_CC_violet.csv")
+  ) %>% map(read.table, header = T) %>%
+  bind_rows(.id = "ontology") %>%
+  as_tibble() %>%
+  filter(p.adj < 0.01) %>%
+  select(ontology, nseqs, name, delta.rank, p.adj)
+
+# Get list of individual genes with GO annotations and p-values for contrast
+violet.genepvals <- as.list(
+  c(BP = "data/GO_MWU/BP_violet.csv",
+    MF = "data/GO_MWU/MF_violet.csv",
+    CC = "data/GO_MWU/CC_violet.csv")
+  ) %>% map(read_tsv) %>%
+  bind_rows(.id = "ontology")
+
+# For all significant GO terms, count how many genes with that GO term have raw pvalue < 0.05 (= "nsig")
+violet.GO <- violet.GO %>%
+  mutate(nsig = map_dbl(name, function(.) {
+    filter(violet.genepvals, name == ., -abs(value) <= log10(0.05)) %>%
+    nrow(.)
+  }))
+  
+# Print table
+(gotable <- violet.GO %>%
+  unite("genes", nsig, nseqs, sep = "/") %>%
+  arrange(ontology, delta.rank) %>%
+  knitr::kable())
+
+write_tsv(violet.GO %>%
+  unite("genes", nsig, nseqs, sep = "/") %>%
+  arrange(ontology, delta.rank), "output/violet_module_goout.txt")
+```
+
+# Run Matz code to create gomwuplot
+```{r}
+# Run Matz code to create gomwuplot
+setwd("data/GO_MWU/")
+bp <- gomwuPlot(inFile = "violet.csv", 
+   goDivision = "BP", goAnnotations = "acer_iso2go.tab")
+cc <- gomwuPlot(inFile = "violet.csv", 
+   goDivision = "CC", goAnnotations = "acer_iso2go.tab")
+mf <- gomwuPlot(inFile = "violet.csv", 
    goDivision = "MF", goAnnotations = "acer_iso2go.tab")
 
 ```

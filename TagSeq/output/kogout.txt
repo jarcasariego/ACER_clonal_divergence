@@ -1,9 +1,10 @@
 genes	term	delta.rank	padj
-45/645	Translation, ribosomal structure and biogenesis	-1422	2.87e-23
-26/411	Replication, recombination and repair	906	1.63e-6
-27/598	RNA processing and modification 	519	0.00234
-208/3032	Signal transduction mechanisms	252	0.00279
-6/156	Nucleotide transport and metabolism	-795	0.0185
-50/375	Energy production and conversion	-501	0.0204
-135/1657	Posttranslational modification, protein turnover, chaperones	-232	0.0347
-52/833	Transcription	278	0.0691
+45/846	Translation, ribosomal structure and biogenesis	-1799	2.0299999999999998e-24
+24/622	Replication, recombination and repair	1093	4.2e-7
+208/4319	Signal transduction mechanisms	308	0.00251
+6/233	Nucleotide transport and metabolism	-1031	0.0074400000000000004
+26/806	RNA processing and modification 	527	0.0122
+50/543	Energy production and conversion	-594	0.0193
+38/796	Carbohydrate transport and metabolism	-428	0.0504
+51/1010	Transcription	330	0.0985
+134/2392	Posttranslational modification, protein turnover, chaperones	-222	0.0985

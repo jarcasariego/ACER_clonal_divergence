@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r Installing/loading packages}
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load("dplyr", "edgeR", "ggplot2", "MCMC.OTU", "pairwiseAdonis", "rcartocolor",
-               "RColorBrewer", "Redmonder", "reshape2", "vegan")
+               "RColorBrewer", "Redmonder", "reshape2", "vegan", "ggpubr")
 
 pacman::p_load_gh("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
 
@@ -120,7 +120,7 @@ its2SeqPlot
 
 ## Save the barplot
 ```{r, save barplot, results = 'hide'}
-ggsave("../output/FigureITS2Seqs.eps", plot = its2SeqPlot, width = 8.5, height = 8.5, unit = "in", dpi = 600)
+ggsave("../output/FigureITS2Seqs.png", plot = its2SeqPlot, width = 8.5, height = 8.5, unit = "in", dpi = 600)
 ```
 
 ```{r, sequence plot, echo = FALSE, fig.width = 8, fig.height = 6}
@@ -216,12 +216,112 @@ its2ProfsPlot
 
 ## Save the barplot
 ```{r, save profiles barplot, results = 'hide'}
-ggsave("../output/FigureITS2Profs.eps", plot = its2ProfsPlot, width = 8.5, height = 8.5, unit = "in", dpi = 600)
+ggsave("../output/FigureITS2Profs.png", plot = its2ProfsPlot, width = 8.5, height = 8.5, unit = "in", dpi = 600)
 ```
 
 ```{r, profiles plot, echo = FALSE, fig.width = 8, fig.height = 6}
 plot(its2ProfsPlot)
 ```
+
+## Final figure
+```{r}
+## Separate by depth for building graph
+
+gssSeqA <- gssSeq[which(gssSeq$depth == "shallow"),]
+gssSeqB <- gssSeq[which(gssSeq$depth == "deep"),]
+gssProfA <- gssProf[which(gssProf$depth == "shallow"),]
+gssProfB <- gssProf[which(gssProf$depth == "deep"),]
+
+colorCount = length(c(8:length(its2Seq2[1,])))
+getPalette = colorRampPalette(redmonder.pal(10, "qMSOStd"), bias = 1.7)
+
+its2plotA <- ggplot(gssSeqA, aes(x = frag, y = count, fill = fct_reorder(otu, count))) +
+  geom_bar(position = "stack", stat = "identity", color = "black",
+           size = 0.25) +
+  labs(fill = expression(paste(italic("ITS2"), " sequence"))) +
+  guides(fill = guide_legend(ncol = 2, reverse = TRUE)) +
+  theme(axis.title.x = element_text(color = "black", size = 12),
+        axis.text.x = element_text(color = "black", size = 12),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_text(color = "black", size = 12),
+        axis.text.y = element_text(color = "black", size = 12),
+        legend.position = "right",
+        legend.justification = "left",
+        legend.direction = "horizontal",
+        legend.title = element_text(color = "black", size = 12, hjust = 0.5, angle = 90),
+        legend.text = element_text(color = "black", size = 10),
+        legend.key = element_blank(),
+        legend.key.size = unit(0.4,"line"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.background = element_blank(),
+        strip.text.x = element_text(size = 12),
+        strip.text.y = element_text(size = 12),
+        strip.background = element_rect(fill = "white", size = 0.9)) +
+  scale_fill_manual(values=rev(getPalette(colorCount))) +
+  theme_bw() + rremove("legend") + rremove("axis.title") + 
+  rremove("x.text") + rremove("x.ticks") + 
+  theme(plot.margin = unit(c(0.2, 0.2, 0, 0.2), "cm"))  
+
+  its2plotB <- ggplot(gssSeqB, aes(x = frag, y = count, fill = fct_reorder(otu, count))) +
+  geom_bar(position = "stack", stat = "identity", color = "black",
+           size = 0.25) +
+  scale_fill_manual(values=rev(getPalette(colorCount))) +
+  theme_bw() + rremove("legend") + rremove("axis.title") + 
+  rremove("x.text") + rremove("x.ticks") + 
+  theme(plot.margin = unit(c(0, 0.2, 0, 0.2), "cm"))   
+
+colorCount = length(c(8:length(its2Profs[1,])))
+getPalette = colorRampPalette(redmonder.pal(3, "dPBIYlBu"), bias = 1.7)
+
+xplotA <- ggplot(gssProfA, aes(x = frag, y = count, fill = fct_reorder(otu, count))) +
+  geom_bar(position = "stack", stat = "identity", color = "black",
+           size = 0.25) +
+  scale_fill_manual(values=rev(getPalette(colorCount))) +
+  theme_bw() + rremove("legend") + rremove("axis.title") + 
+  rremove("x.text") + rremove("x.ticks") +
+  theme(plot.margin = unit(c(0, 0.2, 0.2, 0.2), "cm")) +
+  scale_y_continuous(breaks = c(0.25, 0.75))
+ 
+xplotB <- ggplot(gssProfB, aes(x = frag, y = count, fill = fct_reorder(otu, count))) +
+  geom_bar(position = "stack", stat = "identity", color = "black",
+           size = 0.25) +
+  scale_fill_manual(values=rev(getPalette(colorCount))) +
+  theme_bw() + rremove("legend") + rremove("axis.title") +
+  theme(plot.margin = unit(c(0, 0.2, 0.2, 0.2), "cm"))  +
+  scale_y_continuous(breaks = c(0.25, 0.75))
+
+plot1 <- ggarrange(its2plotA, xplotA,
+                   ncol = 1, heights = c(3,1))
+
+plot2 <- ggarrange(its2plotB, xplotB,
+                   ncol = 1, heights = c(3,1))
+
+its2plot <- ggarrange(plot1, plot2, ncol = 1)
+  
+its2plot <- its2plot + ylab("Proportion") +
+  xlab("Coral Fragment") +   
+  theme(axis.title.x = element_text(color = "black", size = 12),
+        axis.text.x = element_text(color = "black", size = 12),
+        axis.ticks.x = element_blank(),
+        axis.title.y = element_text(color = "black", size = 12),
+        axis.text.y = element_text(color = "black", size = 12),
+        legend.position = "right",
+        legend.justification = "left",
+        legend.direction = "horizontal",
+        legend.title = element_text(color = "black", size = 12, hjust = 0.5, angle = 90),
+        legend.text = element_text(color = "black", size = 10),
+        legend.key = element_blank(),
+        legend.key.size = unit(0.4,"line"),
+        legend.background = element_blank(),
+        panel.background = element_rect(fill = "white"),
+        plot.background = element_blank(),
+        strip.text.x = element_text(size = 12),
+        strip.text.y = element_text(size = 12),
+        strip.background = element_rect(fill = "white", size = 0.9))
+```
+
+
 
 # Statistical analyses on *ITS2* type profiles
 ***

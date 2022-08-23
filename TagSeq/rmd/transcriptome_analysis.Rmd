@@ -170,9 +170,9 @@ vsd <- vst(dds, blind = TRUE)
 saveRDS(vsd, "output/RNA_gene_postvsdAndNormalization.RData")
 # Check for outliers
 e=ExpressionSet(assay(vsd), AnnotatedDataFrame(as.data.frame(colData(vsd))))
-setwd('/Volumes/JARC_2T/Data_PhD/Rapid_Project/Clonal_divergence/ACER_clonal_divergence/TagSeq/output')
-arrayQualityMetrics(e,intgroup=c("depth","genotype"),force=T)
-dev.off()
+#setwd('/Volumes/JARC_2T/Data_PhD/Rapid_Project/Clonal_divergence/ACER_clonal_divergence/TagSeq/output')
+#arrayQualityMetrics(e,intgroup=c("depth","genotype"),force=T)
+#dev.off()
 vsd2=assay(vsd)
 # adding sample names
 snames=c("N45_S","N68_S","N68_D","N85_D","N43_D","N45_D","N12_D","V41_S","N66_S","N11_D","N35_S","V57_S","N35_D","N43_S","N90_S","N11_S","N36_S","V57_D","N36_D","N66_D","N86_D","N90_D","N12_S","V41_D","N86_S","N85_S")
@@ -266,7 +266,7 @@ dapc <- tibble(sample = rownames(dp1$ind.coord),
 dapc.fig <- 
   ggdensity(dapc, x = "LD1", fill = "grp", lwd = 0.25) +
   xlim(-6,6) +
-  labs(x = paste0("LD1 [", vexpl[1],"%]"), y = "density") +
+  labs(x = paste0("LD1 [", varexpl[1],"%]"), y = "density") +
   theme_custom() +
   scale_fill_manual(values =c("#93b16b","#E6550D"))
 
@@ -359,7 +359,7 @@ DEGs <- DE %>%
 
 iso2gene <- read_delim(file = "data/ACER_Transcriptome(Libro_etal_2013)/a.cervicornis_Libro etal 2013_annot_Matz/acer_iso2gene.tab", delim = "\t", col_names = FALSE)
 colnames(iso2gene) <- c("gene","annot")
-DEGs_annot <- merge(DEGs, iso2gene, by = "gene")
+DEGs_annot <- merge(DEGs, iso2gene, by = "gene", all.x = TRUE)
 
 write_delim(DEGs_annot, "output/DEGs_all_genets.tsv", delim = "\t", col_names = TRUE)
 
@@ -383,7 +383,7 @@ knitr::kable(shared_DEG, format = "markdown", caption = "Number of differentiall
 ```
 
 ### Visualize transcriptome with DEGs only
-```{r Principal Coordinates Analysis}
+```{r Principal Coordinates Analysis DEGs}
 countsDEGs <- subset(counts, rownames(counts) %in% DEGs$gene)
 
 dds.DEGs <- DESeqDataSetFromMatrix(countData = countsDEGs,
