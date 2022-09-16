@@ -1,0 +1,4 @@
+ontology	genes	name	delta.rank	p.adj
+BP	0/502	signal transduction	53	0.00968485704668531
+CC	0/8	meprin A complex	200	2.9321922968612e-7
+MF	0/12	hedgehog receptor activity	505	0.00408861563824012

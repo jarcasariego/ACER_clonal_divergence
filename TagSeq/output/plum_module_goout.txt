@@ -3,5 +3,5 @@ BP	0/9	DNA-templated transcription, elongation	271	7.81855560596231e-19
 MF	0/61	DNA-directed 5'-3' RNA polymerase activity	53	4.89846124909707e-5
 MF	0/55	obsolete ubiquitin thiolesterase activity	59	1.29748413960519e-5
 MF	0/37	obsolete DNA-directed RNA polymerase I activity	88	9.47445252045833e-9
-MF	0/10	G protein-coupled peptide receptor activity	330	3.74138288087071e-35
+MF	0/10	peptide receptor activity	330	3.74138288087071e-35
 MF	0/7	neuropeptide receptor activity	473	2.26686714160357e-50

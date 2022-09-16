@@ -265,6 +265,7 @@ zlim = c(-1,1),
 main = paste("Module-trait relationships"))
 dev.off()
 print(data.frame(table(moduleColors)))
+
 ```
 
 
@@ -351,7 +352,7 @@ barplot(ME, col=which.module, main="", cex.main=2,
 dev.off()
 length(datExpr[1,moduleColors==which.module ]) # number of genes in chosen module
 
-which.module="violet" 
+which.module="coral2" 
 datME=MEs
 datExpr=datt
 pdf(file = paste("output/",which.module,"_module_eigengene.pdf", sep = ""))
@@ -389,7 +390,7 @@ inModuleBinary=as.numeric(moduleColors==whichModule)
 combo=data.frame("gene"=row.names(vsd.wg),"Fish_kME"=allkME[,whichModule]*inModuleBinary)
 write.csv(combo,file=paste("data/GO_MWU/",whichModule,".csv",sep=""),row.names=F,quote=F)
 
-whichModule="violet"
+whichModule="coral2"
 table(moduleColors==whichModule) # how many genes are in it?
 
 # Saving data for Fisher-MWU combo test (GO_MWU)
@@ -409,7 +410,7 @@ allkME =as.data.frame(signedKME(datt, MEs))
 gg=read.table("data/ACER_Transcriptome(Libro_etal_2013)/a.cervicornis_Libro etal 2013_annot_Matz/acer_iso2gene.tab",sep="\t")
 
 whichModule="darkgreen"
-top=30 # number of named top-kME genes to plot
+top=10 # number of named top-kME genes to plot
 
 datME=MEs
 datExpr=datt
@@ -441,14 +442,14 @@ contrasting3 = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","
 
 phmap <- pheatmap(hubs,scale="row",col=contrasting2,border_color=NA,treeheight_col=0.1,cex=0.9,cluster_rows=F)
 
-ggsave(filename="output/heatmap_module_darkgreen.png", phmap, width = 9, height = 5)
+ggsave(filename="output/heatmap_module_darkgreen.png", phmap, width = 9, height = 2)
 
 ## Plotting for plum 
 vsd.wg=t(datt) #<<<< add this line!
 allkME =as.data.frame(signedKME(datt, MEs))
 
 whichModule="plum"
-top=30 # number of named top-kME genes to plot
+top=10 # number of named top-kME genes to plot
 
 datME=MEs
 datExpr=datt
@@ -480,14 +481,14 @@ contrasting3 = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","
 
 phmap <- pheatmap(hubs,scale="row",col=contrasting2,border_color=NA,treeheight_col=0.1,cex=0.9,cluster_rows=F)
 
-ggsave(filename="output/heatmap_module_plum.png", phmap, width = 9, height = 5)
+ggsave(filename="output/heatmap_module_plum.png", phmap, width = 9, height = 2)
 
 ## Plotting for violet 
 vsd.wg=t(datt) #<<<< add this line!
 allkME =as.data.frame(signedKME(datt, MEs))
 
-whichModule="violet"
-top=30 # number of named top-kME genes to plot
+whichModule="coral2"
+top=10 # number of named top-kME genes to plot
 
 datME=MEs
 datExpr=datt
@@ -510,7 +511,6 @@ for(i in 1:length(sorted[,1])) {
 	}
 } 
 gnames.short <- gsub(";.*$", "", gnames) 
-gnames.short[7] <- paste(gnames.short[7], "iso", sep = " ")
 row.names(hubs)=gnames.short
 
 contrasting = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
@@ -519,7 +519,7 @@ contrasting3 = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","
 
 phmap <- pheatmap(hubs,scale="row",col=contrasting2,border_color=NA,treeheight_col=0.1,cex=0.9,cluster_rows=F)
 
-ggsave(filename="output/heatmap_module_violet.png", phmap, width = 9, height = 5)
+ggsave(filename="output/heatmap_module_coral2.png", phmap, width = 9, height = 2)
 ##Remember, these plots with individual genes dont tell you anything (tea leaves)
 ```
 
@@ -661,30 +661,30 @@ mf <- gomwuPlot(inFile = "plum.csv",
    goDivision = "MF", goAnnotations = "acer_iso2go.tab")
 
 ```
-```{r GO_MWU for violet module}
+```{r GO_MWU for coral2 module}
 source("data/GO_MWU/gomwu.functions.R")
 
 wdir <- getwd()
 # Run GO_MWU for Biological Process (BP) GO terms
-commandArgs <- function(...) c("violet.csv", "BP")
+commandArgs <- function(...) c("coral2.csv", "BP")
 source("data/GO_MWU/GO_MWU.R")
 
 setwd(wdir)
 # Run GO_MWU for Molecular Function GO terms
-commandArgs <- function(...) c("violet.csv", "MF")
+commandArgs <- function(...) c("coral2.csv", "MF")
 source("data/GO_MWU/GO_MWU.R")
 
 setwd(wdir)
 # Run GO_MWU for all-colony  Cellular Component (CC) GO terms
-commandArgs <- function(...) c("violet.csv", "CC")
+commandArgs <- function(...) c("coral2.csv", "CC")
 source("data/GO_MWU/GO_MWU.R")
 
 setwd(wdir)
 # Get list of all significant GO terms for contrast
-violet.GO <- as.list(
-  c(BP = "data/GO_MWU/MWU_BP_violet.csv",
-    MF = "data/GO_MWU/MWU_MF_violet.csv",
-    CC = "data/GO_MWU/MWU_CC_violet.csv")
+coral2.GO <- as.list(
+  c(BP = "data/GO_MWU/MWU_BP_coral2.csv",
+    MF = "data/GO_MWU/MWU_MF_coral2.csv",
+    CC = "data/GO_MWU/MWU_CC_coral2.csv")
   ) %>% map(read.table, header = T) %>%
   bind_rows(.id = "ontology") %>%
   as_tibble() %>%
@@ -692,40 +692,40 @@ violet.GO <- as.list(
   select(ontology, nseqs, name, delta.rank, p.adj)
 
 # Get list of individual genes with GO annotations and p-values for contrast
-violet.genepvals <- as.list(
-  c(BP = "data/GO_MWU/BP_violet.csv",
-    MF = "data/GO_MWU/MF_violet.csv",
-    CC = "data/GO_MWU/CC_violet.csv")
+coral2.genepvals <- as.list(
+  c(BP = "data/GO_MWU/BP_coral2.csv",
+    MF = "data/GO_MWU/MF_coral2.csv",
+    CC = "data/GO_MWU/CC_coral2.csv")
   ) %>% map(read_tsv) %>%
   bind_rows(.id = "ontology")
 
 # For all significant GO terms, count how many genes with that GO term have raw pvalue < 0.05 (= "nsig")
-violet.GO <- violet.GO %>%
+coral2.GO <- coral2.GO %>%
   mutate(nsig = map_dbl(name, function(.) {
-    filter(violet.genepvals, name == ., -abs(value) <= log10(0.05)) %>%
+    filter(coral2.genepvals, name == ., -abs(value) <= log10(0.05)) %>%
     nrow(.)
   }))
   
 # Print table
-(gotable <- violet.GO %>%
+(gotable <- coral2.GO %>%
   unite("genes", nsig, nseqs, sep = "/") %>%
   arrange(ontology, delta.rank) %>%
   knitr::kable())
 
-write_tsv(violet.GO %>%
+write_tsv(coral2.GO %>%
   unite("genes", nsig, nseqs, sep = "/") %>%
-  arrange(ontology, delta.rank), "output/violet_module_goout.txt")
+  arrange(ontology, delta.rank), "output/coral2_module_goout.txt")
 ```
 
 # Run Matz code to create gomwuplot
 ```{r}
 # Run Matz code to create gomwuplot
 setwd("data/GO_MWU/")
-bp <- gomwuPlot(inFile = "violet.csv", 
+bp <- gomwuPlot(inFile = "coral2.csv", 
    goDivision = "BP", goAnnotations = "acer_iso2go.tab")
-cc <- gomwuPlot(inFile = "violet.csv", 
+cc <- gomwuPlot(inFile = "coral2.csv", 
    goDivision = "CC", goAnnotations = "acer_iso2go.tab")
-mf <- gomwuPlot(inFile = "violet.csv", 
+mf <- gomwuPlot(inFile = "coral2.csv", 
    goDivision = "MF", goAnnotations = "acer_iso2go.tab")
 
 ```

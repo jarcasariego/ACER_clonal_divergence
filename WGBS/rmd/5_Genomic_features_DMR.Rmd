@@ -59,9 +59,9 @@ feat_combined$feature <- gsub("put_promoter", "putative.promoter",feat_combined$
 feat_combined$feature <- factor(feat_combined$feature, levels = c("intergenic", "repeat.region", "putative.promoter", "CDS", "intron", "3prime_UTR", "tRNA"))
 
 #plot
-#jpeg("output/general_comp.DMR_genom_feat_stacked_barplot.jpg", width = 6, height = 5, units = "in", res =300)
+jpeg("output/general_comp.DMR_genom_feat_stacked_barplot.jpg", width = 4, height = 3, units = "in", res =300)
 ggplot(feat_combined,aes(x = region, y = ..count.., fill = factor(feature), group = feature)) + geom_bar(position = "fill", color = "black") + scale_y_continuous(labels=scales::percent) + ylab("% of total regions") + theme_bw() + theme(axis.text.x = element_text(size = 7, angle = 60, hjust = 1), axis.title = element_text(size = 12, face = "bold")) + scale_fill_manual("Feature",values = RColorBrewer::brewer.pal(9,"BuGn"))
-#dev.off()
+dev.off()
 ```
 # Run Chi square test on feature proportions
 
@@ -103,7 +103,7 @@ chi_table$p.adj <- p.adjust(chi_table$p.value, method = "fdr")
 chi_table <- merge(all_feat_summ,chi_table, by = "feature")
 chi_table[,c(1,4:7,13)]
 ```
-# Found significant enrichment of CDS and Repetitive regions in DMRs responding to site
+# Found significant enrichment of CDS, intergenic and Repetitive regions in DMRs responding to site
 
 
 
