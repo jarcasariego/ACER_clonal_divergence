@@ -6,11 +6,9 @@ Authors: Javier A. Rodriguez-Casariego1,4, Alex Mercado-Molina2, Leila Soledade 
 Natalia Soares Quinete3, Anthony Bellantuono5, Mauricio Rodriguez-Lanetty5, Alberto Sabat4, 
 Jose M. Eirin-Lopez1* 
 
- 1 Environmental Epigenetics Laboratory, Institute of Environment, Florida International 
-   University, Miami FL, USA. 
+ 1 Environmental Epigenetics Laboratory, Institute of Environment, Florida International University, Miami FL, USA.
  2 Sociedad Ambiente Marino, San Juan, PR, USA. 
- 3 Department of Chemistry and Biochemistry, Institute of Environment, Florida International
-   University, Miami FL, USA. 
+ 3 Department of Chemistry and Biochemistry, Institute of Environment, Florida International University, Miami FL, USA. 
  4 Department of Biology, University of Puerto Rico, Río Piedras. San Juan, PR, USA
  5 Department of Biological Sciences, Florida International University, Miami, FL, USA
 
