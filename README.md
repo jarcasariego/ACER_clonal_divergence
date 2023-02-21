@@ -1,7 +1,6 @@
 # ACER_clonal_divergence
  This repository provides data and scripts used for the creation of the manuscript: 
-## "Multi-omic characterization of mechanisms contributing to rapid phenotypic plasticity in 
-## the coral Acropora cervicornis under divergent environments"
+## "Multi-omic characterization of mechanisms contributing to rapid phenotypic plasticity in the coral Acropora cervicornis under divergent environments"
 
 Authors: Javier A. Rodriguez-Casariego1,4, Alex Mercado-Molina2, Leila Soledade Lemos3, 
 Natalia Soares Quinete3, Anthony Bellantuono5, Mauricio Rodriguez-Lanetty5, Alberto Sabat4, 
