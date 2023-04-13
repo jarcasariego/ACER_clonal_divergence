@@ -1,3 +1,6 @@
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7661387.svg)](https://doi.org/10.5281/zenodo.7661387)
+
 # ACER_clonal_divergence
  This repository provides data and scripts used for the creation of the manuscript: 
 ## "Multi-omic characterization of mechanisms contributing to rapid phenotypic plasticity in the coral Acropora cervicornis under divergent environments"
