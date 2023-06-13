@@ -146,7 +146,7 @@ pcoa <- ggplot(mds, aes(color = genotype, shape = site)) +
 
 pcoa
 
-ggsave(filename = "output/Fig_pcoa_DMR.png",pcoa, width = 109, height = 84.5, units = "mm")
+#ggsave(filename = "output/Fig_pcoa_DMR.png",pcoa, width = 109, height = 84.5, units = "mm")
 
 ```
 
@@ -185,6 +185,10 @@ vsd <- vst(dds, blind = FALSE)
 # create batch-colony-removed vst perc
 vsd2 <- limma::removeBatchEffect(assay(vsd), vsd$genotype)
 
+vsd3=assay(vsd)
+pheat <- pheatmap(cor(vsd3))
+
+ggsave(filename = "output/Fig.heat_DNAm.png",pheat, width = 130, height = 120, units = "mm")
 
 # use batch-colony-removed vst counts
 dat <- data.frame(vsd2) 

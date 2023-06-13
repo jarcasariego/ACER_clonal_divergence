@@ -93,7 +93,7 @@ perc_methDMR_100 <- all_DMR_100bp[,c(33,7:32)]
 colnames(perc_methDMR_100) <- gsub("methylation_level_","", colnames(perc_methDMR_100))
 
 perc_meth_100 <- perc_methDMR_100[,-1] %>%
-    select(sort(names(.)))
+    dplyr::select(sort(names(.)))
 boxplot(perc_meth_100) + theme_custom()
 row.names(perc_meth_100) <- perc_methDMR_100$ID 
 
@@ -102,7 +102,7 @@ perc_methDMR_250 <- all_DMR_250bp[,c(33,7:32)]
 colnames(perc_methDMR_250) <- gsub("methylation_level_","", colnames(perc_methDMR_250))
 
 perc_meth_250 <- perc_methDMR_250[,-1] %>%
-    select(sort(names(.)))
+    dplyr::select(sort(names(.)))
 
 row.names(perc_meth_250) <- perc_methDMR_250$ID 
 
@@ -241,7 +241,7 @@ aov_0.05_site_DMR_mean <- as.matrix(data.frame(cbind(MeanDeep,MeanShallow)))
 
 #plot site mean comparison
 colnames(aov_0.05_site_DMR_mean) <- c("Deep", "Shallow")
-jpeg("Output/all.aov_0.05_100_DMR_heatmap.jpg", width = 600, height = 1000)
+jpeg("output/all.aov_0.05_100_DMR_heatmap.jpg", width = 600, height = 1000)
 heatmap.2(aov_0.05_site_DMR_mean,margins = c(10,20), cexCol = 2, distfun = function(x) as.dist(1 - cor(t(x), use = "pa")), hclustfun = function(x) hclust(x,method = 'average'),key.xtickfun = function() {
   breaks = pretty(parent.frame()$breaks)
   #breaks = breaks[c(1,length(breaks))]
@@ -249,12 +249,23 @@ heatmap.2(aov_0.05_site_DMR_mean,margins = c(10,20), cexCol = 2, distfun = funct
 dev.off()
 
 #plot each individual sample
-jpeg("Output/DMR.aov_0.05_100_bysample_heatmap.jpg", width = 1000, height = 1000)
-heatmap.2(aov_0.05_site_DMR_m,margins = c(10,10), cexCol = 2, distfun = function(x) as.dist(1 - cor(t(x), use = "pa")), hclustfun = function(x) hclust(x,method = 'average'),key.xtickfun = function() {
+
+genet_color <- data.frame(sample=colnames(aov_0.05_site_DMR_m), genet=meta[meta$Sample.ID %in% genet_color$sample, 5], color = color <-c("#F8766D", "#F8766D", "#FF64B0", "#FF64B0", "#00B4F0", "#00B4F0", "#00C08B", "#00C08B", "#619CFF", "#619CFF", "#F564E3", "#F564E3", "#DE8C00", "#DE8C00", "#C77CFF", "#C77CFF", "#00BA38", "#00BA38", "#DE8C00", "#DE8C00", "#00BFC4", "#00BFC4", "#B79F00", "#B79F00", "#7CAE00", "#7CAE00"))
+
+
+# set the custom distance and clustering functions
+hclustfunc <- function(x) hclust(x,method = 'average')
+distfunc <- function(x) as.dist(1 - cor(t(x), use = "pa"))
+key.xtickfun <- function() {
   breaks = pretty(parent.frame()$breaks)
   #breaks = breaks[c(1,length(breaks))]
-  list(at = parent.frame()$scale01(breaks),labels = breaks)},Colv=TRUE, col= rev(colorRampPalette(brewer.pal(10, "RdYlBu"))(256)), density.info = "none", trace = "none", scale = "row", labRow = FALSE,sepwidth=c(0.01,0.01),sepcolor="white",colsep=1:ncol(aov_0.05_site_DMR_m),rowsep=1:nrow(aov_0.05_site_DMR_m),lmat = rbind(c(0,3),c(2,1),c(4,0)),keysize=0.5, key.par = list(cex=1),lhei=c(1.5,4,1), lwid = c(1.5,4))
+  list(at = parent.frame()$scale01(breaks),labels = breaks)
+  }
+
+jpeg("DMR.aov_0.05_100_bysample_heatmap.jpg", width = 1000, height = 1000)
+heatmap.2(aov_0.05_site_DMR_m, margins = c(10,10), hclustfun=hclustfunc, distfun=distfunc, key.xtickfun = key.xtickfun, cexCol = 2, Colv=T, col= rev(colorRampPalette(brewer.pal(10, "RdYlBu"))(256)), density.info = "none", trace = "none", scale = "row", labRow = FALSE,sepwidth=c(0.01,0.01),sepcolor="white",colsep=1:ncol(aov_0.05_site_DMR_m),rowsep=1:nrow(aov_0.05_site_DMR_m),keysize=0.5, key.par = list(cex=1), ColSideColors=genet_color$color)
 dev.off()
+
 
 ```
 #write out DMR bed file for 1way anova

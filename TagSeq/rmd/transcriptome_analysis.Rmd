@@ -63,7 +63,7 @@ sdat0 <- read_xlsx("data/metadata_tag_seq_ACER.xlsx") %>%
 
 sdat <- sdat0 %>%
   arrange(seq_ID) %>%                              # order rows by sample name
-  column_to_rownames(var = "Sample.ID")               # set sample name to rownames
+  column_to_rownames(var = "seq_ID")               # set sample name to rownames
 
 # Gene annotations, GO, KEGG, KOG (Matz_July_2014)
 gene <- read.delim("data/ACER_Transcriptome(Libro_etal_2013)/a.cervicornis_Libro etal 2013_annot_Matz/acer_iso2gene.tab", sep = "\t")
@@ -79,16 +79,16 @@ count_summ <- read_csv("data/processed/read_counts_both_align.csv")
 colnames(count_summ)[1] <- "seq_ID"
 #separate counts for alignment to transcriptome (Libro etal 2013)
 count_summ_trans <- count_summ %>%
-  select(seq_ID, raw, post_trim, mapped_Trans) %>%
+  dplyr::select(seq_ID, raw, post_trim, mapped_Trans) %>%
   gather(stage, count, -seq_ID) 
 #separate counts for alignment to ACER genome mRNA track
 count_summ_geno <- count_summ %>%
-  select(seq_ID, raw, post_trim, mapped_geno_RNA) %>%
+  dplyr::select(seq_ID, raw, post_trim, mapped_geno_RNA) %>%
   gather(stage, count, -seq_ID)
 # Summarize counts
 counttable_trans <- sdat0 %>%
-  left_join(count_summ_trans) %>%
-  group_by(stage) %>%
+  dplyr::left_join(count_summ_trans) %>%
+  dplyr::group_by(stage) %>%
   summarize(`Min. (per sample)` = min(count),
             `Max. (per sample)` = max(count),
             `Median (per sample)` = median(count),
@@ -590,7 +590,7 @@ KOGheatmap <- function(deltaranks, pvals, ...) {
 
 KOGfig <- KOGheatmap(kogtables$LP15.LP40, kogpvals$LP15.LP40, fontsize = 8)
 
-ggsave(filename = "output/KOG_heatmap.png", KOGfig, width = 169, height = 84.5, units = "mm")
+ggsave(filename = "output/KOG_heatmap.png", KOGfig, width = 180, height = 84.5, units = "mm")
 
 ```
 

@@ -92,6 +92,7 @@ saveRDS(MD.All, file = "output/meth_dataset.RData")
 
 # Testing for Differentially Methylated Genes
 ```{r}
+MD.all <- readRDS("output/meth_dataset.RData")
 # Comparison of samples between symb, heat stress and the interaction
 # Binomial GLM to test for differentially methylated genes
 sub_meth_table  <- MD.All
@@ -369,35 +370,89 @@ theme_custom <- function() {
 }
 
 #Calculate log2fold
-meth_fold<- aggregate(per.meth ~ site*gene, data=sub_meth_table, FUN=mean) %>% 
+
+DM <- aggregate(per.meth ~ genotype*site*gene, data=sub_meth_table, FUN=mean) %>% 
   pivot_wider(names_from = site, values_from = per.meth)%>%
   mutate(log2fold = log2(LP15/LP40))
-meth_fold <- data.frame(meth_fold[,c(1,4)])
+
+DM_all <- aggregate(per.meth ~ site*gene, data=sub_meth_table, FUN=mean) %>% 
+  pivot_wider(names_from = site, values_from = per.meth)%>%
+  mutate(log2fold = log2(LP15/LP40))%>%
+  mutate(genotype = "all") %>%
+  bind_rows(DM) %>% 
+  dplyr::select(genotype, gene, log2fold) %>%
+  nest(gene, log2fold)
+
+DM_all$num <- "LP15"
+DM_all$den <- "LP40"
 
 # Read gene2kog file
 gene2kog <- Annot_full[,c(1,5)]%>%
    filter(!kog == "")
-colnames(gene2kog) <- c("gene", "KOG_term")
+colnames(gene2kog) <- c("gene_id", "KOG_term")
 
 #Run KOG 
-KOG<-kog.mwu(meth_fold, gene2kog)
+KOG <- DM_all %>%
+  mutate(KOG = map(data, ~ kog.mwu(data.frame(.), gene2kog)),
+         # If a KOG term has <10 genes associated with it, set delta rank to zero
+         KOG = map(KOG, ~ mutate(., delta.rank = ifelse(nseqs < 10, 0, delta.rank))))
 
-ktable <- makeDeltaRanksTable(list("shallow_vs_deep"= KOG)) %>%
-  rownames_to_column(var = "term") %>%
-  arrange(.,term) %>% 
-  column_to_rownames(var = "term")
+# Generate all KOG delta rank tables
+kogtables <- data.frame(KOG %>%
+                          mutate(genet = case_when(genotype == " C1683 " ~ "genet 1", 
+                           genotype == " C1691 " ~ "genet 2", 
+                           genotype == " C1701 " ~ "genet 3",
+                           genotype == " C1703 " ~ "genet 4",
+                           genotype == " C1708 " ~ "genet 5",
+                           genotype == " C1713 " ~ "genet 6",
+                           genotype == " C1722 " ~ "genet 7",
+                           genotype == " C1725 " ~ "genet 8",
+                           genotype == " C1727 " ~ "genet 9",
+                           genotype == " C1732 " ~ "genet 10",
+                           genotype == " C1733 " ~ "genet 11",
+                           genotype == " C1741 " ~ "genet 12",
+                           genotype == "all" ~ "all genets")) %>%
+  mutate(genet = factor(genet, levels = c("genet 1","genet 2","genet 3","genet 4",
+                                          "genet 5","genet 6","genet 7", "genet 8",
+                                          "genet 9", "genet 10","genet 11","genet 12","all genets"))) %>%
+  unnest(KOG) %>%
+  dplyr::select(genet, term, delta.rank)) %>% 
+  tidyr::pivot_wider(., names_from = genet, values_from = delta.rank)
 
-color = colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(100)
+kogtables <- kogtables[,c(1,3:14,2)] %>%
+  arrange(.,term) %>%
+  column_to_rownames(var = "term") 
 
-kogpvals <- KOG[,c(1,5)]
-rownames(kogpvals) <- NULL
-kogpvals <- kogpvals %>%
+
+# Generate KOG p-value stars
+kogpvals <- KOG %>%
+    mutate(genet = case_when(genotype == " C1683 " ~ "genet 1", 
+                           genotype == " C1691 " ~ "genet 2", 
+                           genotype == " C1701 " ~ "genet 3",
+                           genotype == " C1703 " ~ "genet 4",
+                           genotype == " C1708 " ~ "genet 5",
+                           genotype == " C1713 " ~ "genet 6",
+                           genotype == " C1722 " ~ "genet 7",
+                           genotype == " C1725 " ~ "genet 8",
+                           genotype == " C1727 " ~ "genet 9",
+                           genotype == " C1732 " ~ "genet 10",
+                           genotype == " C1733 " ~ "genet 11",
+                           genotype == " C1741 " ~ "genet 12",
+                           genotype == "all" ~ "all genets")) %>%
+  mutate(genet = factor(genet, levels = c("genet 1","genet 2","genet 3","genet 4",
+                                          "genet 5","genet 6","genet 7", "genet 8",
+                                          "genet 9", "genet 10","genet 11","genet 12","all genets"))) %>%
+  unnest(KOG) %>%
+  dplyr::select(genet, term, padj)%>% 
+  tidyr::pivot_wider(., names_from = genet, values_from = padj) 
+
+kogpvals <- kogpvals[,c(1,3:14,2)] %>%
   arrange(.,term) %>%
   column_to_rownames(var = "term") %>%
   transmute_all(., gtools::stars.pval)
 
-# Making a heatmap with hierarchical clustering trees: 
 
+# Function to plot KOG delta ranks heatmap
 KOGheatmap <- function(deltaranks, pvals, ...) {
   deltaranks <- as.matrix(deltaranks)
   paletteLength <- 100
@@ -412,20 +467,30 @@ KOGheatmap <- function(deltaranks, pvals, ...) {
            color = myColor, breaks = myBreaks, ...)
 }
 
-KOGfig <- KOGheatmap(deltaranks = ktable, pvals = kogpvals , fontsize = 8)
-ggsave(filename = "output/KOG_heatmap.png", KOGfig, width = 110, height = 84.5, units = "mm")
+KOGfig <- KOGheatmap(kogtables, kogpvals, fontsize = 8)
+
+ggsave(filename = "output/KOG_heatmap.png", KOGfig, width = 195, height = 84.5, units = "mm")
+
 
 # Write table for supp info
+
 kogout <- KOG %>%
+  unnest(KOG) %>%
+  filter(genotype == "all") %>%
+  dplyr::select(term, nseqs, delta.rank, padj)
+  
+
+# Write table for supp info
+kogout <- kogout %>%
   filter(padj < 0.1) %>%
-  dplyr::select(term, delta.rank, padj) %>%
   mutate(padj = signif(padj, digits = 3))
 
 write_tsv(kogout, "output/kogout.txt")
 
-(k_table <- knitr::kable(kogout)  %>%
-  kable_styling(full_width = TRUE))
+k_table <- knitr::kable(kogout)  %>%
+  kable_styling(full_width = TRUE)
 
+k_table
 ```
 
 #GO_MWU
