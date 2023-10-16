@@ -40,7 +40,8 @@ SurvData <- SurvData %>%
 #Create dataset with only the Genets included in the multiomics analyses and only LP reef
 
 SurvData2<-SurvData %>%
-  filter(Genot %in% c(" C1683 ", " C1691 ", " C1701 ", " C1703 ", " C1708 ", " C1713 ", " C1722 ", " C1725 ", " C1727 ", " C1732 ", " C1733 ", " C1741 "))
+  filter(Genot %in% c(" C1683 ", " C1691 ", " C1701 ", " C1703 ", " C1708 ", " C1713 ", " C1722 ", " C1725 ", " C1727 ", " C1732 ", " C1733 ", " C1741 ")) %>%
+  filter(Reef == "LP")
 
 ```
 
@@ -54,26 +55,28 @@ km_fit <- survfit(Surv(time, status) ~ 1, data=SurvData)
 summary(km_fit, times = c(1,10,20,30*(1:10)))
 
 #plot full survival curve 
-ggsurvplot(km_fit, data = SurvData)
+a <-ggsurvplot(km_fit, data = SurvData, legend = "none")
+a
 
 
 # compare curves by reef
 km_reef_fit <- survfit(Surv(time, status) ~ Reef, data=SurvData)
 summary(km_reef_fit, times = c(1,10,20,30*(1:10)))
-ggsurvplot(km_reef_fit, data = SurvData, pval = TRUE)
-
+b <- ggsurvplot(km_reef_fit, data = SurvData, pval = TRUE)
+b
 # By depth
 
 km_depth_fit <- survfit(Surv(time, status) ~ Depth, data=SurvData)
 summary(km_depth_fit, times = c(1,10,20,30*(1:10)))
-ggsurvplot(km_depth_fit, data = SurvData, pval = TRUE)
-
+c <- ggsurvplot(km_depth_fit, data = SurvData, pval = TRUE)
+c
 
 # Genotype
 
 km_genot_fit <- survfit(Surv(time, status) ~ Genot, data=SurvData)
 summary(km_genot_fit, times = c(1,10,20,30*(1:10)))
-ggsurvplot(km_genot_fit, data = SurvData, pval = TRUE, legend = "none") # legend is too large with all genotypes
+d <- ggsurvplot(km_genot_fit, data = SurvData, pval = TRUE, legend = "none") # legend is too large with all genotypes
+d
 
 # by source
 
@@ -107,17 +110,22 @@ summary(km_fit2, times = c(1,10,20,30*(1:10)))
 #plot full survival curve 
 ggsurvplot(km_fit2, data = SurvData2)
 
+# compare curves by reef
+km_reef_fit2 <- survfit(Surv(time, status) ~ Reef, data=SurvData2)
+summary(km_reef_fit2, times = c(1,10,20,30*(1:10)))
+ggsurvplot(km_reef_fit2, data = SurvData2, pval = TRUE)
+
 # By depth
 
 km_depth_fit2 <- survfit(Surv(time, status) ~ Depth, data=SurvData2)
 summary(km_depth_fit2, times = c(1,10,20,30*(1:10)))
-ggsurvplot(km_depth_fit2, data = SurvData2, pval = TRUE)
+ggsurvplot(km_depth_fit2, data = SurvData2, pval = TRUE, legend = "none")
 
 
 # Genotype
 
 km_genot_fit2 <- survfit(Surv(time, status) ~ Genot, data=SurvData2)
-ggsurvplot(km_genot_fit2, data = SurvData2, pval = TRUE)
+ggsurvplot(km_genot_fit2, data = SurvData2, pval = TRUE, legend = "none")
 #Plot each genet individually
 autoplot(km_genot_fit2, surv.linetype = 'dashed', conf.int = FALSE,
          censor.shape = '*', censor.size = 5, facets = TRUE, ncol = 3)
