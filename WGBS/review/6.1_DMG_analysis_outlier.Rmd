@@ -1,0 +1,504 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, cache = TRUE)
+knitr::opts_knit$set(root.dir = '/Volumes/JARC_2T/Data_PhD/Rapid_Project/Clonal_divergence/ACER_clonal_divergence/WGBS')
+```
+
+```{r load_libraries, include = TRUE}
+library(plotrix) 
+library(ggplot2)
+library(gridExtra)
+library(pheatmap)
+library(dplyr)
+library(tidyverse)
+library(tidyr)
+library(topGO) #BiocManager:: install('topGO')
+library(goseq) #BiocManager:: install('goseq')
+library(genefilter) #BiocManager:: install('genefilter')
+library(gplots)
+library(cowplot)
+library(lsmeans) #install.packages('lsmeans')
+library(ontologyIndex) #BiocManager:: install('ontologyIndex')
+library(ontologySimilarity) #BiocManager:: install('ontologySimilarity')
+library(data.table)
+library(RColorBrewer)
+library(colorRamps)
+library(GSEABase) #BiocManager:: install('GSEABase')
+library(doParallel)
+library(kableExtra)
+
+## ggplot theme
+theme_custom <- function() {
+  theme_bw(base_size = 10) %+replace%    #, base_family = "Arial"
+    theme(
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(), 
+      panel.background = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA),
+      legend.background = element_rect(fill = NA, colour = NA),
+      axis.text.x = element_text(angle=45, hjust=1, vjust = 1)#,
+      #legend.title = element_text(size = 8), 
+      #legend.text = element_text(size = 7)
+    )
+}
+```
+
+```{r pcoa euclidean distance on raw percent data, eval = TRUE}
+
+#load sample information
+sample.info <- read.csv("data/Sample_Metadata.csv", header=T, sep=",", na.string="NA", stringsAsFactors = F) #read in info
+colnames(sample.info) <- c("site","colonyID","seq_id","Sample.ID","genotype")
+sample.info <- sample.info[which(sample.info$genotype!=" C1733 "),]
+
+MD.all <- readRDS("output/meth_dataset.RData")
+MD.all <- MD.all[which(MD.all$genotype != " C1733 "),]
+gbM_perc <- aggregate(per.meth ~ Sample.ID*gene, data=MD.all, FUN=mean)
+gbM_perc <- pivot_wider(gbM_perc, names_from = Sample.ID, values_from = per.meth) 
+
+gbM_perc <- as.data.frame(gbM_perc)
+row.names(gbM_perc) <- gbM_perc$gene 
+gbM_perc <- gbM_perc[,-1]
+
+sampleDists_Eu <- dist(t(gbM_perc), method = "manhattan")
+sampleDist_EuMatrix <- as.matrix(sampleDists_Eu)
+
+mds <- as.data.frame(sample.info) %>% 
+  cbind(cmdscale(sampleDist_EuMatrix)) %>%
+  mutate(fillcol = factor(ifelse(site == "LP15", NA, genotype))) %>%    # create factor for fill color in plot
+  mutate(alphaval = ifelse(site == "LP15", 1, 0))
+
+# Calculate group centroids for plotting
+mds <- mds %>%
+  group_by(site) %>%
+  dplyr::summarise(c1 = mean(`1`), c2 = mean(`2`)) %>%    
+  full_join(mds)
+
+# Calculate variance explained by each PC
+MDS <- cmdscale(sampleDist_EuMatrix, eig = TRUE)
+vexpl <- round(MDS$eig*100/sum(MDS$eig),1)[1:2]
+
+# Plot with spiders
+pcoa <- ggplot(mds, aes(color = genotype, shape = site)) +
+  geom_segment(mapping = aes(x = `1`, y = `2`, xend = c1, yend = c2), lwd = 0.25, col = "grey") +
+  geom_point(size = 2, aes(x = c1, y = c2), col = "black", show.legend = FALSE) +
+  geom_point(size = 0.7, aes(x = `1`, y = `2`)) +
+  scale_shape_discrete(name = "Depth", labels = c("deep", "shallow")) +
+  scale_color_discrete(name = "Genet",) +
+  labs(x = paste0("PC1 [", vexpl[1],"%]"), y = paste0("PC2 [", vexpl[2],"%]")) +
+  theme_custom() +
+  theme(legend.spacing = unit(0, "cm"), legend.key.size = unit(0.7, 'lines')) +
+  guides(fill=guide_legend(ncol=2)) 
+
+pcoa
+
+ggsave(filename = "output/Fig_pcoa_snp_filt_DMG.png", pcoa, width = 109, height = 84.5, units = "mm")
+
+```
+
+
+# Testing for Differentially Methylated Genes
+```{r DMG}
+#MD.all <- readRDS("output/meth_dataset.RData")
+# Comparison of samples between symb, heat stress and the interaction
+# Binomial GLM to test for differentially methylated genes
+sub_meth_table  <- MD.all
+sub_meth_table$group <- paste0(sub_meth_table$Sample.ID, sub_meth_table$gene)
+#filter for genes with >5 methylated positions
+min.filt <- count(sub_meth_table, vars = c( group))
+newdata <- min.filt[ which(min.filt$n > 4), ]
+sub_meth_table <- sub_meth_table[sub_meth_table$group %in% newdata$vars,]
+
+saveRDS(sub_meth_table, file = "review/gene_meth_table.RData")
+
+
+## Depending on the size of the dataset, this chunk might be run in a cluster
+
+sub_meth_table <- readRDS("review/gene_meth_table.RData")
+
+# create data frame to stored results
+#results <- data.frame()
+
+# Sub-divide meth dataset
+#gs <- unique(sub_meth_table$gene)
+#gs_1 <- gs[c(1:10845)]
+#gs_2 <- gs[c(10846:21690)]
+#gs_3 <- gs[c(21691:32535)]
+
+# set multicore paramters 
+#cores=detectCores()
+#cl <- parallel::makeCluster(32, setup_strategy = "sequential")
+#registerDoParallel(cl)
+#first subset the unique dataframes and second run the GLMs
+#results <- foreach(i=1:length(gs_1), .combine=rbind) %dopar% {
+    #subset the dataframe gene by gene
+  #sub_meth_table1 <- subset(sub_meth_table, gene ==gs_1[i])
+  
+  # fit glm position model
+  #fit <- glm(matrix(c(meth, unmeth), ncol=2) ~ site, 
+  #           data=sub_meth_table1, family=binomial)
+  #a <- anova(fit, test="Chisq")
+  
+  # capture summary stats to data frame
+  #df <- data.frame(gene = sub_meth_table1[1,7],
+   #                pval.site = a$`Pr(>Chi)`[2],
+    #               stringsAsFactors = F)
+#}
+
+#stop cluster
+#stopCluster(cl)
+
+#cores=detectCores()
+#cl <- parallel::makeCluster(32, setup_strategy = "sequential")
+#registerDoParallel(cl)
+#first subset the unique dataframes and second run the GLMs
+#results2 <- foreach(i=1:length(gs_2), .combine=rbind) %dopar% {
+    #subset the dataframe gene by gene
+ # sub_meth_table1 <- subset(sub_meth_table, gene ==gs_2[i])
+  
+  # fit glm position model
+#  fit <- glm(matrix(c(meth, unmeth), ncol=2) ~ site, 
+  #           data=sub_meth_table1, family=binomial)
+ # a <- anova(fit, test="Chisq")
+  
+  # capture summary stats to data frame
+  #df <- data.frame(gene = sub_meth_table1[1,7],
+   #                pval.site = a$`Pr(>Chi)`[2],
+    #               stringsAsFactors = F)
+#}
+
+#stop cluster
+#stopCluster(cl)
+
+#cores=detectCores()
+#cl <- parallel::makeCluster(32, setup_strategy = "sequential")
+#registerDoParallel(cl)
+#first subset the unique dataframes and second run the GLMs
+#results3 <- foreach(i=1:length(gs_3), .combine=rbind) %dopar% {
+    #subset the dataframe gene by gene
+ # sub_meth_table1 <- subset(sub_meth_table, gene ==gs_3[i])
+  
+  # fit glm position model
+  #fit <- glm(matrix(c(meth, unmeth), ncol=2) ~ site, 
+   #          data=sub_meth_table1, family=binomial)
+  #a <- anova(fit, test="Chisq")
+  
+  # capture summary stats to data frame
+  #df <- data.frame(gene = sub_meth_table1[1,7],
+   #                pval.site = a$`Pr(>Chi)`[2],
+    #               stringsAsFactors = F)
+#}
+
+#stop cluster
+#stopCluster(cl)
+# An error will be generated here for contrasts. 
+#This potential for contrasts (interactions) is included in the case one wants to examine the role of position of CpG within a gene
+#Error in `contrasts<-`(`*tmp*`, value = contr.funs[1 + isOF[nn]]) : contrasts can be applied only to factors with 2 or more levels
+#Continuing the analysis from results line will generate the results in the absence of the contrast (interaction).
+#results <- rbind(results, results2)
+#results <- rbind(results, results3)
+#results[is.na(results)] <- 0
+#results$adj.pval <- p.adjust(results$pval.site, method='BH')
+
+#saveRDS(results, file = "output/gene_meth_glm_results.RData")
+
+# Can continue local
+
+results <- readRDS("review/gene_meth_glm_results.RData")
+
+sig_genes <-results[, c(1,3)]
+sig_genes <- sig_genes[order(sig_genes$adj.pval),]
+sig_genes <- sig_genes[which(sig_genes$adj.pval <0.05), ]
+colnames(sig_genes) <- c("gene_id", "adj.pval")
+sub_meth_table$per.meth <- (sub_meth_table$meth/(sub_meth_table$meth+sub_meth_table$unmeth))*100 #calculate percent methylation
+
+
+# Annotation of DMG between sites
+DMG_annot <- merge(sig_genes , Annot_full, by="gene_id", all.x=TRUE)
+DMG_annot <- DMG_annot[order(DMG_annot$adj.pval),]
+DMG_annot <- DMG_annot[!duplicated(DMG_annot$gene_id),]
+write.table(DMG_annot, 'review/Table_S1_DMG_annot.tsv', sep='\t', row.names=FALSE)
+
+genelist_DMGs <- DMG_annot$iso
+
+DEGs <- read.table('../TagSeq/output/DEGs_all_genets.tsv', sep='\t', header = TRUE)
+colnames(DEGs) <- c("iso", "annot")
+
+genelist_DEGs <- DEGs$iso
+
+
+#Create Venn Diagram of DEG and DMGs 
+library(VennDiagram)
+myCol <- c("#FBB4AE","#B3CDE3")
+venn.diagram(
+        x = list(genelist_DEGs,genelist_DMGs),
+                category.names = c("DEGs", "DMGs"),
+        filename = 'review/DMG_DEG_venn_diagramm.png',
+        output=TRUE,
+        
+        # Output features
+        imagetype="png" ,
+        height = 480 , 
+        width = 480 , 
+        resolution = 300,
+        compression = "lzw",
+        
+        # Circles
+        lwd = 2,
+        lty = 'blank',
+        fill = myCol,
+        
+        # Numbers
+        cex = .5,
+        fontface = "bold",
+        fontfamily = "sans",
+        
+        # Set names
+        cat.cex = 0.6,
+        cat.fontface = "bold",
+        cat.default.pos = "outer",
+        cat.pos = c(-27, 27),
+        cat.dist = c(0.055, 0.055),
+        cat.fontfamily = "sans"
+)
+
+# find shared genes 
+shared_DMG_DEG <- intersect(genelist_DEGs,genelist_DMGs)
+
+
+
+```
+```{r}
+
+
+##### Heatmap of DMGs  #####
+meth_table.means <- aggregate(per.meth ~ site*gene, data=MD.all, FUN=mean)
+meth_table.means_s <- meth_table.means[meth_table.means$gene %in% sig_genes$gene,]
+
+
+meth_table.means <- meth_table.means_s
+meth_table.means$tempID <- paste(meth_table.means$site, meth_table.means$gene, meth_table.means$per.meth, sep = ":")
+meth_table.means <- meth_table.means[match(unique(meth_table.means$tempID), meth_table.means$tempID),]
+meth_table.means <- meth_table.means[,-4]
+
+meth_table <- aggregate(per.meth ~ Sample.ID*gene, data=MD.all, FUN=mean)
+meth_table_sig <- meth_table[meth_table$gene %in% sig_genes$gene,]
+
+
+# Plot All_general comp
+sig_meth_mean <- meth_table.means %>% pivot_wider(names_from = c(site), values_from = per.meth)
+sig_meth_mean.mat <- as.matrix(sig_meth_mean[,-1])
+colnames(sig_meth_mean.mat) <- c("shallow_reef", "deep_reef")
+jpeg("review/sig_DMG_heatmap.jpg", width = 600, height = 1000)
+AllHM <- heatmap.2(sig_meth_mean.mat, margins = c(10,10), cexRow = 1.2, cexCol = 1, Colv=FALSE, dendrogram="row", labRow=FALSE, col = rev(RColorBrewer::brewer.pal(name = "RdYlBu", n = 10)), na.color = "black", density.info = "none", trace = "none", scale = "row", sepwidth=c(0.025,0.025), sepcolor="darkgray", keysize = 1)
+dev.off()
+
+
+meth_table.means$site <- ordered(meth_table.means$site,
+                         levels = c("LP15", "LP40"))
+group_by(meth_table.means, site) %>%
+  summarise(
+    count = n(),
+    mean = mean(per.meth, na.rm = TRUE),
+    sd = sd(per.meth, na.rm = TRUE)
+  )
+
+
+### Perform analysis for sign diff in Gene methylation (1x1 samples)
+
+meth_table_genets <- merge(meth_table, sample.info, by='Sample.ID') 
+
+res.aov <- aov(per.meth ~ site, data = meth_table_genets)
+summary(res.aov)
+TukeyHSD(res.aov)
+
+pairwise.t.test(meth_table_genets$per.meth, meth_table_genets$site,
+                 p.adjust.method = "BH")
+
+library("ggpubr")
+ggboxplot(meth_table_genets, x = "site", y = "per.meth", 
+          color = "site", palette = c("#00AFBB", "#E7B800"),
+          ylab = "Percent Methylation", xlab = "Site")
+ggline(meth_table_genets, x = "site", y = "per.meth", 
+          add = c("mean_se", "jitter"),
+          color = "site", palette = c("#00AFBB", "#E7B800"),
+          ylab = "Percent Methylation", xlab = "Site")
+
+#filter for diff methylation > 10 %
+delta_meth <- sig_meth_mean
+delta_meth$delta <- delta_meth$LP15 - delta_meth$LP40
+delta_meth <- delta_meth[which(delta_meth$delta > 10 | delta_meth$delta < -10), ]
+delta_meth <- delta_meth[,-4]
+
+sig_delta_meth_mean <- delta_meth %>% pivot_longer(!gene, names_to = "site", values_to = "per.meth" )
+
+ggboxplot(sig_delta_meth_mean, x = "site", y = "per.meth", 
+          color = "site", palette = c("#00AFBB", "#E7B800"),
+          ylab = "Percent Methylation", xlab = "Site")
+ggline(sig_delta_meth_mean, x = "site", y = "per.meth", 
+          add = c("mean_se", "jitter"),
+          ylab = "Percent Methylation", xlab = "Site")
+
+ 
+
+# Plot independent samples
+sig_meth <- merge(meth_table_sig, sample.info, by="Sample.ID")
+sig_meth <- sig_meth[, 1:4] %>% 
+  arrange(., site, Sample.ID) 
+sig_meth <- sig_meth[, 1:3] %>% 
+  pivot_wider(names_from = c(Sample.ID), values_from = per.meth)
+
+sig_meth.mat <- as.matrix(sig_meth[,-1])
+
+jpeg("review/all_samples_sig_DMG_heatmap.jpg", width = 600, height = 1000)
+AllHM <- heatmap.2(sig_meth.mat, margins = c(10,10), cexRow = 1.2, cexCol = 1, Colv=FALSE, dendrogram="row", labRow=FALSE, col = rev(RColorBrewer::brewer.pal(name = "RdYlBu", n = 10)), na.color = "black", density.info = "none", trace = "none", scale = "row", sepwidth=c(0.025,0.025), sepcolor="darkgray", keysize = 1)
+dev.off()
+
+
+```
+
+
+#KOG enrichment analysis
+Using methdiff values, we can analyze which KOG classifications are up- or down-regulated within each genet, and across all twelve genets together.
+```{r}
+
+library(KOGMWU)
+theme_custom <- function() {
+  theme_bw(base_size = 10) %+replace%    #, base_family = "Arial"
+    theme(
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(), 
+      panel.background = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA),
+      legend.background = element_rect(fill = NA, colour = NA),
+      axis.text.x = element_blank()#,
+      #legend.title = element_text(size = 8), 
+      #legend.text = element_text(size = 7)
+    )
+}
+
+#Calculate log2fold
+
+sub_meth_table <- readRDS("review/gene_meth_table.RData")
+
+DM <- aggregate(per.meth ~ genotype*site*gene, data=sub_meth_table, FUN=mean) %>% 
+  pivot_wider(names_from = site, values_from = per.meth)%>%
+  mutate(log2fold = log2(LP15/LP40))
+
+DM_all <- aggregate(per.meth ~ site*gene, data=sub_meth_table, FUN=mean) %>% 
+  pivot_wider(names_from = site, values_from = per.meth)%>%
+  mutate(log2fold = log2(LP15/LP40))%>%
+  mutate(genotype = "all") %>%
+  bind_rows(DM) %>% 
+  dplyr::select(genotype, gene, log2fold) %>%
+  nest(gene, log2fold)
+
+DM_all$num <- "LP15"
+DM_all$den <- "LP40"
+
+# Read gene2kog file
+gene2kog <- Annot_full[,c(1,5)]%>%
+   filter(!kog == "")
+colnames(gene2kog) <- c("gene_id", "KOG_term")
+
+#Run KOG 
+KOG <- DM_all %>%
+  mutate(KOG = map(data, ~ kog.mwu(data.frame(.), gene2kog)),
+         # If a KOG term has <10 genes associated with it, set delta rank to zero
+         KOG = map(KOG, ~ mutate(., delta.rank = ifelse(nseqs < 10, 0, delta.rank))))
+
+# Generate all KOG delta rank tables
+kogtables <- data.frame(KOG %>%
+                          mutate(genet = case_when(genotype == " C1683 " ~ "genet 1", 
+                           genotype == " C1691 " ~ "genet 2", 
+                           genotype == " C1701 " ~ "genet 3",
+                           genotype == " C1703 " ~ "genet 4",
+                           genotype == " C1708 " ~ "genet 5",
+                           genotype == " C1713 " ~ "genet 6",
+                           genotype == " C1722 " ~ "genet 7",
+                           genotype == " C1725 " ~ "genet 8",
+                           genotype == " C1727 " ~ "genet 9",
+                           genotype == " C1732 " ~ "genet 10",
+                           genotype == " C1733 " ~ "genet 11",
+                           genotype == " C1741 " ~ "genet 12",
+                           genotype == "all" ~ "all genets")) %>%
+  mutate(genet = factor(genet, levels = c("genet 1","genet 2","genet 3","genet 4",
+                                          "genet 5","genet 6","genet 7", "genet 8",
+                                          "genet 9", "genet 10","genet 11","genet 12","all genets"))) %>%
+  unnest(KOG) %>%
+  dplyr::select(genet, term, delta.rank)) %>% 
+  tidyr::pivot_wider(., names_from = genet, values_from = delta.rank)
+
+kogtables <- kogtables[,c(1,3:13,2)] %>%
+  arrange(.,term) %>%
+  column_to_rownames(var = "term") 
+
+
+# Generate KOG p-value stars
+kogpvals <- KOG %>%
+    mutate(genet = case_when(genotype == " C1683 " ~ "genet 1", 
+                           genotype == " C1691 " ~ "genet 2", 
+                           genotype == " C1701 " ~ "genet 3",
+                           genotype == " C1703 " ~ "genet 4",
+                           genotype == " C1708 " ~ "genet 5",
+                           genotype == " C1713 " ~ "genet 6",
+                           genotype == " C1722 " ~ "genet 7",
+                           genotype == " C1725 " ~ "genet 8",
+                           genotype == " C1727 " ~ "genet 9",
+                           genotype == " C1732 " ~ "genet 10",
+                           genotype == " C1733 " ~ "genet 11",
+                           genotype == " C1741 " ~ "genet 12",
+                           genotype == "all" ~ "all genets")) %>%
+  mutate(genet = factor(genet, levels = c("genet 1","genet 2","genet 3","genet 4",
+                                          "genet 5","genet 6","genet 7", "genet 8",
+                                          "genet 9", "genet 10","genet 11","genet 12","all genets"))) %>%
+  unnest(KOG) %>%
+  dplyr::select(genet, term, padj)%>% 
+  tidyr::pivot_wider(., names_from = genet, values_from = padj) 
+
+kogpvals <- kogpvals[,c(1,3:13,2)] %>%
+  arrange(.,term) %>%
+  column_to_rownames(var = "term") %>%
+  transmute_all(., gtools::stars.pval)
+
+
+# Function to plot KOG delta ranks heatmap
+KOGheatmap <- function(deltaranks, pvals, ...) {
+  deltaranks <- as.matrix(deltaranks)
+  paletteLength <- 100
+  myColor <- colorRampPalette(rev(c("chocolate1","#FEE090","grey10", "cyan3","cyan")))(paletteLength)
+  myBreaks <- c(seq(min(deltaranks), 0, length.out = ceiling(paletteLength/2) + 1), 
+                seq(max(deltaranks)/paletteLength, max(deltaranks), 
+                    length.out = floor(paletteLength/2)))
+  pheatmap(mat = deltaranks, fontsize_number = 8,
+           cluster_cols = FALSE, cluster_rows = FALSE,
+           treeheight_row = 15, treeheight_col = 15,
+           border_color = "white", scale = "none",
+           color = myColor, breaks = myBreaks, ...)
+}
+
+KOGfig <- KOGheatmap(kogtables, kogpvals, fontsize = 8)
+
+KOGfig
+
+ggsave(filename = "review/KOG_heatmap.png", KOGfig, width = 195, height = 84.5, units = "mm")
+
+
+# Write table for supp info
+
+kogout <- KOG %>%
+  unnest(KOG) %>%
+  filter(genotype == "all") %>%
+  dplyr::select(term, nseqs, delta.rank, padj)
+  
+
+# Write table for supp info
+kogout <- kogout %>%
+  filter(padj < 0.1) %>%
+  mutate(padj = signif(padj, digits = 3))
+
+write_tsv(kogout, "review/kogout.txt")
+
+k_table <- knitr::kable(kogout)  %>%
+  kable_styling(full_width = TRUE)
+
+k_table
+```

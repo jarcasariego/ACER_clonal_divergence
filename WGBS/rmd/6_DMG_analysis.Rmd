@@ -20,7 +20,7 @@ library(tidyverse)
 library(tidyr)
 library(topGO) #BiocManager:: install('topGO')
 library(goseq) #BiocManager:: install('goseq')
-library(genefilter)
+library(genefilter) #BiocManager:: install('genefilter')
 library(gplots)
 library(cowplot)
 library(lsmeans) #install.packages('lsmeans')
@@ -89,10 +89,55 @@ saveRDS(MD.All, file = "output/meth_dataset.RData")
 
 ```
 
+```{r pcoa euclidean distance on raw percent data}
+
+#load("output/meth_dataset.RData")
+gbM_perc <- aggregate(per.meth ~ Sample.ID*gene, data=MD.All, FUN=mean)
+gbM_perc <- pivot_wider(gbM_perc, names_from = Sample.ID, values_from = per.meth) 
+
+gbM_perc <- as.data.frame(gbM_perc)
+row.names(gbM_perc) <- gbM_perc$gene 
+gbM_perc <- gbM_perc[,-1]
+
+sampleDists_Eu <- dist(t(gbM_perc), method = "manhattan")
+sampleDist_EuMatrix <- as.matrix(sampleDists_Eu)
+
+mds <- as.data.frame(sample.info) %>% 
+  cbind(cmdscale(sampleDist_EuMatrix)) %>%
+  mutate(fillcol = factor(ifelse(site == "LP15", NA, genotype))) %>%    # create factor for fill color in plot
+  mutate(alphaval = ifelse(site == "LP15", 1, 0))
+
+# Calculate group centroids for plotting
+mds <- mds %>%
+  group_by(site) %>%
+  dplyr::summarise(c1 = mean(`1`), c2 = mean(`2`)) %>%    
+  full_join(mds)
+
+# Calculate variance explained by each PC
+MDS <- cmdscale(sampleDist_EuMatrix, eig = TRUE)
+vexpl <- round(MDS$eig*100/sum(MDS$eig),1)[1:2]
+
+# Plot with spiders
+pcoa <- ggplot(mds, aes(color = genotype, shape = site)) +
+  geom_segment(mapping = aes(x = `1`, y = `2`, xend = c1, yend = c2), lwd = 0.25, col = "grey") +
+  geom_point(size = 2, aes(x = c1, y = c2), col = "black", show.legend = FALSE) +
+  geom_point(size = 0.7, aes(x = `1`, y = `2`)) +
+  scale_shape_discrete(name = "Depth", labels = c("deep", "shallow")) +
+  scale_color_discrete(name = "Genet",) +
+  labs(x = paste0("PC1 [", vexpl[1],"%]"), y = paste0("PC2 [", vexpl[2],"%]")) +
+  theme_custom() +
+  theme(legend.spacing = unit(0, "cm"), legend.key.size = unit(0.7, 'lines')) +
+  guides(fill=guide_legend(ncol=2)) 
+
+pcoa
+
+#ggsave(filename = "output/Fig_pcoa_DMR.png",pcoa, width = 109, height = 84.5, units = "mm")
+
+```
 
 # Testing for Differentially Methylated Genes
 ```{r}
-MD.all <- readRDS("output/meth_dataset.RData")
+#MD.all <- readRDS("output/meth_dataset.RData")
 # Comparison of samples between symb, heat stress and the interaction
 # Binomial GLM to test for differentially methylated genes
 sub_meth_table  <- MD.All
@@ -102,12 +147,12 @@ min.filt <- count(sub_meth_table, vars = c( group))
 newdata <- min.filt[ which(min.filt$n > 2), ]
 sub_meth_table <- sub_meth_table[sub_meth_table$group %in% newdata$vars,]
 
-saveRDS(sub_meth_table, file = "output/gene_meth_table.RData")
+#saveRDS(sub_meth_table, file = "output/gene_meth_table.RData")
 
 
 ## Depending on the size of the dataset, this chunk might be run in a cluster
 
-sub_meth_table <- readRDS("output/gene_meth_table.RData")
+#sub_meth_table <- readRDS("output/gene_meth_table.RData")
 
 # create data frame to stored results
 results <- data.frame()
@@ -193,11 +238,11 @@ results <- rbind(results, results3)
 results[is.na(results)] <- 0
 results$adj.pval <- p.adjust(results$pval.site, method='BH')
 
-saveRDS(results, file = "output/gene_meth_glm_results.RData")
+#saveRDS(results, file = "output/gene_meth_glm_results.RData")
 
 # Can continue local
 
-results <- readRDS("output/gene_meth_glm_results.RData")
+#results <- readRDS("output/gene_meth_glm_results.RData")
 
 sig_genes <-results[, c(1,3)]
 sig_genes <- sig_genes[order(sig_genes$adj.pval),]
@@ -371,11 +416,13 @@ theme_custom <- function() {
 
 #Calculate log2fold
 
-DM <- aggregate(per.meth ~ genotype*site*gene, data=sub_meth_table, FUN=mean) %>% 
+sub_meth_table <- readRDS("output/gene_meth_table.RData")
+
+DM <- aggregate(per.meth ~ genotype*site*gene, data=sub_meth_table[which(sub_meth_table$genotype != " C1733 "), ], FUN=mean) %>% 
   pivot_wider(names_from = site, values_from = per.meth)%>%
   mutate(log2fold = log2(LP15/LP40))
 
-DM_all <- aggregate(per.meth ~ site*gene, data=sub_meth_table, FUN=mean) %>% 
+DM_all <- aggregate(per.meth ~ site*gene, data=sub_meth_table[which(sub_meth_table$genotype != " C1733 "), ], FUN=mean) %>% 
   pivot_wider(names_from = site, values_from = per.meth)%>%
   mutate(log2fold = log2(LP15/LP40))%>%
   mutate(genotype = "all") %>%
@@ -419,7 +466,7 @@ kogtables <- data.frame(KOG %>%
   dplyr::select(genet, term, delta.rank)) %>% 
   tidyr::pivot_wider(., names_from = genet, values_from = delta.rank)
 
-kogtables <- kogtables[,c(1,3:14,2)] %>%
+kogtables <- kogtables[,c(1,3:13,2)] %>%
   arrange(.,term) %>%
   column_to_rownames(var = "term") 
 
@@ -446,7 +493,7 @@ kogpvals <- KOG %>%
   dplyr::select(genet, term, padj)%>% 
   tidyr::pivot_wider(., names_from = genet, values_from = padj) 
 
-kogpvals <- kogpvals[,c(1,3:14,2)] %>%
+kogpvals <- kogpvals[,c(1,3:13,2)] %>%
   arrange(.,term) %>%
   column_to_rownames(var = "term") %>%
   transmute_all(., gtools::stars.pval)
@@ -469,7 +516,9 @@ KOGheatmap <- function(deltaranks, pvals, ...) {
 
 KOGfig <- KOGheatmap(kogtables, kogpvals, fontsize = 8)
 
-ggsave(filename = "output/KOG_heatmap.png", KOGfig, width = 195, height = 84.5, units = "mm")
+KOGfig
+
+#ggsave(filename = "output/KOG_heatmap.png", KOGfig, width = 195, height = 84.5, units = "mm")
 
 
 # Write table for supp info

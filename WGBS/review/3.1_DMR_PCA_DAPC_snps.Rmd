@@ -1,0 +1,242 @@
+---
+title: "DMR_basic_stats_after_SNP_filtering"
+author: "Javier Rodriguez Casariego"
+date: "09/19/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '/Volumes/JARC_2T/Data_PhD/Rapid_Project/Clonal_divergence/ACER_clonal_divergence/WGBS')
+```
+
+load libraries
+```{r libraries}
+library(data.table)
+library(gplots)
+library(ggplot2) #install.packages('ggplot2')
+library(dplyr)
+library(broom)
+library(RColorBrewer)
+library(egg) #install.packages('egg')
+library(purrr)
+library(nlme)
+library(vegan)
+library(tidyverse)
+library(adegenet)
+library(DESeq2) #BiocManager::install('DESeq2')
+library(pheatmap)
+library(cowplot)
+library(ggpubr)
+library(limma) #BiocManager::install("limma")
+```
+
+```{r set functions}
+## ggplot theme
+theme_custom <- function() {
+  theme_bw(base_size = 10) %+replace%    #, base_family = "Arial"
+    theme(
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(), 
+      panel.background = element_blank(),
+      panel.border = element_rect(color = "black", fill = NA),
+      legend.background = element_rect(fill = NA, colour = NA),
+      axis.text.x = element_text(angle=45, hjust=1, vjust = 1)#,
+      #legend.title = element_text(size = 8), 
+      #legend.text = element_text(size = 7)
+    )
+}
+
+```
+
+```{r load data}
+meta <- read.csv("data/Sample_Metadata.csv", header = TRUE)
+colnames(meta)[1] <- "site"
+
+all_DMR_100bp<-read.csv("data/DMR_snp_filt/AllDepths_DMR100bp_cov10x_rms_results_collapsed.tsv", sep = "\t", header = TRUE)
+colnames(all_DMR_100bp)[1] <- "chr"
+
+```
+
+```{r prepare data for analysis}
+###Filter regions present in over 75% of samples
+
+df <- data.frame() #create empty data frame to bind filtered rows into
+for(i in (1:nrow(all_DMR_100bp))){
+  shallow <- all_DMR_100bp[i,c(7,9,11,13,15,17,19,21,23,25,27,29,31)] #define columns from the category shallow
+  deep <- all_DMR_100bp[i,c(8,10,12,14,16,18,20,22,24,26,28,30,32)] #define columns from the category deep
+      if(length(which(is.na(shallow))) < 2 & length(which(is.na(deep))) < 2){
+  df <- rbind(df,all_DMR_100bp[i,]) #conditional statement: if less than 2 samples/category have NA for % methylation bind the whole row to the new dataframe
+  }
+}
+#save df as a specific variable
+all_DMR_100bp <- df
+
+all_DMR_100bp$ID <- paste(all_DMR_100bp$chr,":", all_DMR_100bp$start,"-",all_DMR_100bp$end, sep = "")
+all_DMR_100bp$ID <- gsub("__.*__.*:",":",all_DMR_100bp$ID)
+
+
+
+#build %meth per DMR matrix for 100bp dataset
+perc_methDMR_100 <- all_DMR_100bp[,c(33,7:32)]
+colnames(perc_methDMR_100) <- gsub("methylation_level_","", colnames(perc_methDMR_100))
+
+perc_meth_100 <- perc_methDMR_100[,-1] %>%
+    select(sort(names(.)))
+boxplot(perc_meth_100) + theme_custom()
+row.names(perc_meth_100) <- perc_methDMR_100$ID 
+
+
+```
+
+```{r pcoa euclidean distance on raw percent data}
+
+sampleDists_Eu <- dist(t(perc_meth_100), method = "manhattan")
+sampleDist_EuMatrix <- as.matrix(sampleDists_Eu)
+
+mds <- as.data.frame(meta) %>% 
+  cbind(cmdscale(sampleDist_EuMatrix)) %>%
+  mutate(fillcol = factor(ifelse(site == "LP15", NA, genotype))) %>%    # create factor for fill color in plot
+  mutate(alphaval = ifelse(site == "LP15", 1, 0))
+
+# Calculate group centroids for plotting
+mds <- mds %>%
+  group_by(site) %>%
+  dplyr::summarise(c1 = mean(`1`), c2 = mean(`2`)) %>%    
+  full_join(mds)
+
+# Calculate variance explained by each PC
+MDS <- cmdscale(sampleDist_EuMatrix, eig = TRUE)
+vexpl <- round(MDS$eig*100/sum(MDS$eig),1)[1:2]
+
+# Plot with spiders
+pcoa <- ggplot(mds, aes(color = genotype, shape = site)) +
+  geom_segment(mapping = aes(x = `1`, y = `2`, xend = c1, yend = c2), lwd = 0.25, col = "grey") +
+  geom_point(size = 2, aes(x = c1, y = c2), col = "black", show.legend = FALSE) +
+  geom_point(size = 0.7, aes(x = `1`, y = `2`)) +
+  scale_shape_discrete(name = "Depth", labels = c("deep", "shallow")) +
+  scale_color_discrete(name = "Genet",) +
+  labs(x = paste0("PC1 [", vexpl[1],"%]"), y = paste0("PC2 [", vexpl[2],"%]")) +
+  theme_custom() +
+  theme(legend.spacing = unit(0, "cm"), legend.key.size = unit(0.7, 'lines')) +
+  guides(fill=guide_legend(ncol=2)) 
+
+pcoa
+
+ggsave(filename = "output/Fig_pcoa_no_outlier_DMR.png",pcoa, width = 109, height = 84.5, units = "mm")
+
+```
+
+### DAPC analysis
+
+```{r prepare data}
+
+coldata <- meta %>%
+  rownames_to_column("ID") %>%
+  as_tibble() %>%
+  select(ID, genotype, site)
+colcounts <- perc_meth_100 %>%
+  rownames_to_column("gene") %>%
+  as_tibble() %>%
+  gather(key = "ID", value = "count", -gene) %>%
+  mutate(count=count*100) %>%
+  mutate(count=round(count, 0))
+countData <- (round(perc_meth_100*100, 0))
+
+# eliminate NAs
+df <- data.frame() 
+for(i in (1:nrow(countData))){
+  shallow <- countData[i,c(1,3,5,7,9,11,13,15,17,19,21,23,25)] 
+  deep <- countData[i,c(2,4,6,8,10,12,14,16,18,20,22,24,26)] 
+    if(length(which(is.na(shallow))) < 1 & length(which(is.na(deep))) < 1){
+  df <- rbind(df,countData[i,])
+    }
+}
+
+countData <- df 
+
+dds <- DESeqDataSetFromMatrix(countData = countData,
+                              colData = coldata,
+                              design = ~ site)
+vsd <- vst(dds, blind = FALSE)
+# create batch-colony-removed vst perc
+vsd2 <- limma::removeBatchEffect(assay(vsd), vsd$genotype)
+
+vsd3=assay(vsd)
+pheat <- pheatmap(cor(vsd3))
+
+#ggsave(filename = "output/Fig.heat_DNAm.png",pheat, width = 130, height = 120, units = "mm")
+
+# use batch-colony-removed vst counts
+dat <- data.frame(vsd2) 
+boxplot(dat, main="Colony effect removed")
+# use regular vst counts
+dat1 <- data.frame(assay(vsd))
+boxplot(dat1, main="Original")
+```
+
+
+```{r Define number of PC to maintain}
+# How many PCs should be kept?
+dapc2 <- dapc(t(countData), coldata$site, n.da=2, n.pca=100)
+temp <- optim.a.score(dapc2, n.sim = 5)
+my.dapc <- function(n.pca) dapc(t(dat), coldata$site, n.pca = n.pca, n.da = 2)
+
+scatter(dapc2, cell = 1, pch = 18:23, cstar = 0, scree.da = TRUE, scree.pca=TRUE, posi.pca = "topright",
+        mstree = FALSE, lwd = 2, lty = 2)
+
+library(furrr)
+
+plan(multisession)
+
+my.dapc.res <- tibble(n.pca = 1:25) %>%
+  mutate(dapc = map(n.pca, my.dapc), 
+         a.score = furrr::future_map(dapc, a.score, n.sim = 500, seed=TRUE),
+         mean = map_dbl(a.score, ~ .$mean),
+         cumvar = map_dbl(dapc, ~ .$var))
+
+my.dapc.res %>%
+   arrange(-mean) %>%
+   head()
+
+# Retaining 13 PC's gives highest a-score (2.3%), and utilizes 97% of variance. Therefore, let's use 13 PC's for the DA. 
+
+```
+
+
+```{r run DAPC}
+
+#first run with batch-colony-removed vst perc
+dp1 <- dapc(t(countData), coldata$site,
+              n.pca = 13, n.da = 1)   # Retain 13 PCs and 1 discriminant functions (#groups -1)
+scatter(dp1,bg="white",scree.da=TRUE,scree.pca=TRUE,legend=TRUE,solid=.4) 
+
+varexpl <- round((dp1$eig/sum(dp1$eig))[1:2] * 100, 1)
+
+# Axis one represents the effect of symbiont. Axis two represents the heat stress responses of both C and D corals.Note that D corals diverge further from control on this axis
+
+#scatter(dp1,2,2, bg="white", scree.da=FALSE, legend=TRUE, solid=.4)
+
+dapc <- tibble(sample = rownames(dp1$ind.coord),
+               grp = dp1$grp,
+               LD1 = dp1$ind.coord[,1])
+dapc <- dapc %>%
+  group_by(grp) %>%
+  summarize(c1 = mean(LD1)) %>%
+  full_join(dapc)
+```
+
+```{r plot DAPC results}
+
+# Plot
+
+dapc.fig <- ggdensity(dapc, x = "LD1", fill = "grp", lwd = 0.25) +
+  xlim(-4,2.5) +
+  labs(x = paste0("LD1 [", vexpl[1],"%]"), y = "density") +
+  theme_custom() + 
+  scale_fill_manual(values =c("#93b16b","#E6550D"))
+
+dapc.fig 
+ggsave(filename = "output/DAPC_snp_filt_DMR.png", plot = dapc.fig, width = 109, height = 84.5, units = "mm")
+
+```

@@ -1,0 +1,245 @@
+---
+title: "Survival analysis"
+author: "Javier Rodriguez Casariego"
+date: "09/20/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '/Volumes/JARC_2T/Data_PhD/Rapid_Project/Clonal_divergence/ACER_clonal_divergence/Demographic_AnalysisR/')
+```
+ 
+```{r load packages}
+library(survival)
+library(ranger)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(ggfortify)
+library(survminer)
+```
+
+```{r load and prepara data}
+
+SurvRaw<-read.csv("data/SurvivalRaw.csv", header=TRUE)
+
+# gather status (censored or dead, 0 or 1) along sampling times. 
+SurvData <- SurvRaw %>% tidyr::pivot_longer(., cols = 7:17, names_to ="time",
+ values_to = "status")
+
+# specify surv times in days. These are the exact days from outplanting to each sampling
+SurvData$time <- rep(c(48,71,94,148,173,205,254,288,306,331,389), times = 400)
+
+SurvData <- drop_na(SurvData)
+
+# Create a grouping variable to compare genets in study with all genets
+SurvData <- SurvData %>% 
+  mutate(genet_group=as.numeric(SurvData$Genot %in% c(" C1683 ", " C1691 ", " C1701 ", " C1703 ", " C1708 ", " C1713 ", " C1722 ", " C1725 ", " C1727 ", " C1732 ", " C1733 ", " C1741 ")))
+
+#Create dataset with only the Genets included in the multiomics analyses and only LP reef
+
+SurvData2<-SurvData %>%
+  filter(Genot %in% c(" C1683 ", " C1691 ", " C1701 ", " C1703 ", " C1708 ", " C1713 ", " C1722 ", " C1725 ", " C1727 ", " C1732 ", " C1733 ", " C1741 "))
+
+```
+
+```{r km models full dataset}
+
+#Build Surv data matrix
+
+km <- with(SurvData, Surv(time, status))
+head(km)
+km_fit <- survfit(Surv(time, status) ~ 1, data=SurvData)
+summary(km_fit, times = c(1,10,20,30*(1:10)))
+
+#plot full survival curve 
+ggsurvplot(km_fit, data = SurvData)
+
+
+# compare curves by reef
+km_reef_fit <- survfit(Surv(time, status) ~ Reef, data=SurvData)
+summary(km_reef_fit, times = c(1,10,20,30*(1:10)))
+ggsurvplot(km_reef_fit, data = SurvData, pval = TRUE)
+
+# By depth
+
+km_depth_fit <- survfit(Surv(time, status) ~ Depth, data=SurvData)
+summary(km_depth_fit, times = c(1,10,20,30*(1:10)))
+ggsurvplot(km_depth_fit, data = SurvData, pval = TRUE)
+
+
+# Genotype
+
+km_genot_fit <- survfit(Surv(time, status) ~ Genot, data=SurvData)
+summary(km_genot_fit, times = c(1,10,20,30*(1:10)))
+ggsurvplot(km_genot_fit, data = SurvData, pval = TRUE, legend = "none") # legend is too large with all genotypes
+
+# by source
+
+km_source_fit <- survfit(Surv(time, status) ~ Source, data=SurvData)
+summary(km_source_fit, times = c(1,10,20,30*(1:10)))
+ggsurvplot(km_source_fit, data = SurvData, pval = TRUE)
+
+# by genet group
+
+km_group_fit <- survfit(Surv(time, status) ~ genet_group, data=SurvData)
+summary(km_group_fit, times = c(1,10,20,30*(1:10)))
+ggsurvplot(km_group_fit, data = SurvData, pval = TRUE)
+
+kmfit.list <- list(reef=km_reef_fit, depth= km_depth_fit, genotype=km_genot_fit, Source= km_source_fit, Genet_group=km_group_fit)
+
+surv_pvalue(kmfit.list, combine = TRUE)
+
+
+```
+
+
+```{r km models multiomic genets only}
+
+#Build Surv data matrix
+
+km2 <- with(SurvData2, Surv(time, status))
+head(km2)
+km_fit2 <- survfit(Surv(time, status) ~ 1, data=SurvData2)
+summary(km_fit2, times = c(1,10,20,30*(1:10)))
+
+#plot full survival curve 
+ggsurvplot(km_fit2, data = SurvData2)
+
+# By depth
+
+km_depth_fit2 <- survfit(Surv(time, status) ~ Depth, data=SurvData2)
+summary(km_depth_fit2, times = c(1,10,20,30*(1:10)))
+ggsurvplot(km_depth_fit2, data = SurvData2, pval = TRUE)
+
+
+# Genotype
+
+km_genot_fit2 <- survfit(Surv(time, status) ~ Genot, data=SurvData2)
+ggsurvplot(km_genot_fit2, data = SurvData2, pval = TRUE)
+#Plot each genet individually
+autoplot(km_genot_fit2, surv.linetype = 'dashed', conf.int = FALSE,
+         censor.shape = '*', censor.size = 5, facets = TRUE, ncol = 3)
+
+# by source
+
+km_source_fit2 <- survfit(Surv(time, status) ~ Source, data=SurvData2)
+summary(km_source_fit2, times = c(1,10,20,30*(1:10)))
+ggsurvplot(km_source_fit2, data = SurvData2, pval = TRUE)
+
+
+kmfit.list2 <- list(depth= km_depth_fit2, genotype=km_genot_fit2, Source= km_source_fit2)
+
+surv_pvalue(kmfit.list2, combine = TRUE)
+
+
+```
+Cox Proportional Hazards Model (accounts for all covariates)
+
+```{r run coxph for full dataset}
+
+cox <- coxph(Surv(time, status) ~  Genot + Reef + Depth + Source , data = SurvData)
+summary(cox)
+anova(cox)
+cox_fit <- survfit(cox)
+autoplot(cox_fit)
+
+```
+```{r run coxph for multiomic genets dataset}
+
+cox2 <- coxph(Surv(time, status) ~  Genot + Depth , data = SurvData2)
+summary(cox2)
+anova(cox2)
+cox_fit2 <- survfit(cox2)
+autoplot(cox_fit2)
+
+```
+
+
+Random survival forest model (can detect non-linear effects that cox can't)
+
+
+```{r RSF model for omics genets dataset}
+
+r_fit2 <- ranger(Surv(time, status) ~ Depth +  Source + Genot, data = SurvData2,
+                     mtry = NULL,
+                     importance = "permutation",
+                     splitrule = "extratrees",
+                     verbose = TRUE)
+
+# print out coefficients
+sort(r_fit2$variable.importance)
+
+# Average the survival models
+
+death_times2 <- r_fit2$unique.death.times 
+surv_prob2 <- data.frame(r_fit2$survival)
+avg_prob2 <- sapply(surv_prob2,mean)
+
+# Plot the survival models for each fragment
+
+plot(r_fit2$unique.death.times,r_fit2$survival[1,], 
+     type = "l", 
+     ylim = c(0,1),
+     col = "red",
+     xlab = "Days",
+     ylab = "survival",
+     main = "Genets Survival Curves")
+
+cols <- colors()
+for (n in sample(c(2:dim(SurvData2)[1]), 20)){
+  lines(r_fit2$unique.death.times, r_fit2$survival[n,], type = "l", col = cols[n])
+}
+lines(death_times2, avg_prob2, lwd = 2)
+
+vi2 <- data.frame(sort(round(r_fit2$variable.importance, 4), decreasing = TRUE))
+names(vi2) <- "importance"
+head(vi2)
+cat("Prediction Error = 1 - Harrell's c-index = ", r_fit2$prediction.error)
+
+
+```
+
+
+```{r summarize all models}
+
+# Set up for ggplot for full dataset
+kmi <- rep("KM",length(km_fit$time))
+km_df <- data.frame(km_fit$time,km_fit$surv,kmi)
+names(km_df) <- c("Time","Surv","Model")
+
+coxi <- rep("Cox",length(cox_fit$time))
+cox_df <- data.frame(cox_fit$time,cox_fit$surv,coxi)
+names(cox_df) <- c("Time","Surv","Model")
+
+
+plot_df <- rbind(km_df,cox_df)
+
+p <- ggplot(plot_df, aes(x = Time, y = Surv, color = Model))
+p + geom_line()
+
+# Set up for ggplot for omics dataset
+kmi2 <- rep("KM",length(km_fit2$time))
+km_df2 <- data.frame(km_fit2$time,km_fit2$surv,kmi)
+names(km_df2) <- c("Time","Surv","Model")
+
+coxi2 <- rep("Cox",length(cox_fit2$time))
+cox_df2 <- data.frame(cox_fit2$time,cox_fit2$surv,coxi2)
+names(cox_df2) <- c("Time","Surv","Model")
+
+rfi2 <- rep("RF",length(r_fit2$unique.death.times))
+rf_df2 <- data.frame(r_fit2$unique.death.times,avg_prob2,rfi2)
+names(rf_df2) <- c("Time","Surv","Model")
+
+plot_df2 <- rbind(km_df2,cox_df2,rf_df2)
+
+p2 <- ggplot(plot_df2, aes(x = Time, y = Surv, color = Model)) 
+p2 + geom_line()
+
+
+
+
+
+```
+

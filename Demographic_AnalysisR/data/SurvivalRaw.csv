@@ -1,0 +1,401 @@
+ID,Source,Reef,Quad,Depth,Genot,T1,T2,T3,T4,T5,T6,T8,T9,T10,T11,T12
+N1,Los Corchos,LP,001-002,Shallow, C1689 ,,1,,,,,,,,,
+N1,Los Corchos,LP,029-030',Deep, C1689 ,,,,,,,,,,,0
+N10,Los Corchos,LP,007-008,Shallow, C1689 ,,,,,,,,,,,0
+N10,Los Corchos,LP,035-036',Deep, C1689 ,,1,,,,,,,,,
+N100,Carlos Rosario,CR,049-050,Shallow, C1739 ,1,,,,,,,,,,
+N100,Carlos Rosario,CR,059-060,Deep, C1739 ,,,,,,,,,,,1
+N11,Los Corchos,LP,007-008,Shallow, C1683 ,,,,,,,,,,,0
+N11,Los Corchos,LP,035-036',Deep, C1683 ,,,,,,,,,,,0
+N16,Los Corchos,LP,009-010,Shallow, C1683 ,,1,,,,,,,,,
+N16,Los Corchos,LP,039-040,Deep, C1683 ,,1,,,,,,,,,
+N13,Los Corchos,LP,007-008,Shallow, C1710 ,,,,,,,,,,,0
+N13,Los Corchos,LP,035-036',Deep, C1710 ,,1,,,,,,,,,
+N14,Los Corchos,LP,009-010,Shallow, C1724 ,,,,,,,,,,,0
+N14,Los Corchos,LP,039-040,Deep, C1724 ,,1,,,,,,,,,
+N15,Los Corchos,LP,009-010,Shallow, C1712 ,0,,,,,,,,,,
+N15,Los Corchos,LP,039-040,Deep, C1712 ,,1,,,,,,,,,
+N66,Carlos Rosario,LP,001-002,Shallow, C1691 ,,,,,,,,,,,0
+N66,Carlos Rosario,LP,029-030',Deep, C1691 ,,,,,,,,,,,0
+N17,Los Corchos,LP,009-010,Shallow, C1752 ,,,,,,,,,,,0
+N17,Los Corchos,LP,039-040,Deep, C1752 ,,,,,1,,,,,,
+N18,Los Corchos,CR,041-042,Shallow, C1683 ,,,,,,,,,,,0
+N18,Los Corchos,CR,051-052,Deep, C1683 ,,,1,,,,,,,,
+N19,Los Corchos,CR,041-042,Shallow, C1737 ,,,,,,,,,,,0
+N19,Los Corchos,CR,051-052,Deep, C1737 ,,1,,,,,,,,,
+N2,Los Corchos,LP,001-002,Shallow, C1689 ,,,,,,,,1,,,
+N2,Los Corchos,LP,029-030',Deep, C1689 ,,,,,,,,,,,0
+N20,Los Corchos,CR,043-044,Shallow, C1711 ,,1,,,,,,,,,
+N20,Los Corchos,CR,055-056,Deep, C1711 ,,,,,,,,,,,0
+N21,Los Corchos,CR,045-046,Shallow, C1683 ,,1,,,,,,,,,
+N21,Los Corchos,CR,053-054,Deep, C1683 ,,1,,,,,,,,,
+N22,Los Corchos,CR,047-048,Shallow, C1689 ,1,,,,,,,,,,
+N22,Los Corchos,CR,057-058,Deep, C1689 ,,1,,,,,,,,,
+N23,Los Corchos,CR,049-050,Shallow, C1719 ,,,,1,,,,,,,
+N23,Los Corchos,CR,059-060,Deep, C1719 ,,,,,,,,,,,0
+N24,Los Corchos,CR,041-042,Shallow, C1686 ,,1,,,,,,,,,
+N24,Los Corchos,CR,051-052,Deep, C1686 ,,1,,,,,,,,,
+N25,Los Corchos,CR,043-044,Shallow, C1683 ,,1,,,,,,,,,
+N25,Los Corchos,CR,055-056,Deep, C1683 ,,1,,,,,,,,,
+N26,Los Corchos,CR,045-046,Shallow, C1693 ,,1,,,,,,,,,
+N26,Los Corchos,CR,053-054,Deep, C1693 ,,,,,,,,,,,0
+N27,Los Corchos,CR,045-046,Shallow, C1717 ,,1,,,,,,,,,
+N27,Los Corchos,CR,053-054,Deep, C1717 ,,1,,,,,,,,,
+N28,Los Corchos,CR,045-046,Shallow, C1684 ,,1,,,,,,,,,
+N28,Los Corchos,CR,053-054,Deep, C1684 ,,1,,,,,,,,,
+N29,Los Corchos,CR,047-048,Shallow, C1433 ,,,,,,,,,,,0
+N29,Los Corchos,CR,057-058,Deep, C1433 ,,1,,,,,,,,,
+N3,Los Corchos,LP,001-002,Shallow, C1687 ,,,,,,,,,,,0
+N3,Los Corchos,LP,029-030',Deep, C1687 ,,1,,,,,,,,,
+N30,Los Corchos,CR,047-048,Shallow, C1698 ,,,,1,,,,,,,
+N30,Los Corchos,CR,057-058,Deep, C1698 ,,,,,,,,,,,0
+N31,Los Corchos,CR,047-048,Shallow, C1683 ,,,,,,,,,,,0
+N31,Los Corchos,CR,057-058,Deep, C1683 ,,,,,,,,,,,0
+N32,Los Corchos,CR,049-050,Shallow, C1686 ,,1,,,,,,,,,
+N32,Los Corchos,CR,059-060,Deep, C1686 ,,1,,,,,,,,,
+N33,Los Corchos,CR,049-050,Shallow, C1726 ,,,,,,,,,,,0
+N33,Los Corchos,CR,059-060,Deep, C1726 ,,1,,,,,,,,,
+N67,Carlos Rosario,LP,001-002,Shallow, C1691 ,,,,,,,,,,,0
+N67,Carlos Rosario,LP,029-030',Deep, C1691 ,,1,,,,,,,,,
+N74,Carlos Rosario,LP,003-004,Deep, C1691 ,0,,,,,,,,,,
+N74,Carlos Rosario,LP,003-004,Shallow, C1691 ,,,1,,,,,,,,
+N77,Carlos Rosario,LP,005-006,Shallow, C1691 ,,,,1,,,,,,,
+N77,Carlos Rosario,LP,033-034,Deep, C1691 ,,,,1,,,,,,,
+N81,Carlos Rosario,LP,005-006,Shallow, C1691 ,,,,1,,,,,,,
+N81,Carlos Rosario,LP,033-034,Deep, C1691 ,,,,,,,,,,1,
+N86,Carlos Rosario,LP,007-008,Shallow, C1691 ,,,,,,,,,,,0
+N86,Carlos Rosario,LP,035-036',Deep, C1691 ,,,,,,,,,,,0
+V46,Luis Pena,LP,007-008,Shallow, C1691 ,,,,,,,,,,0,
+V46,Luis Pena,LP,035-036',Deep, C1691 ,,1,,,,,,,,,
+N4,Los Corchos,LP,003-004,Deep, C1736 ,0,,,,,,,,,,
+N4,Los Corchos,LP,003-004,Shallow, C1736 ,,,,,,,,,,,0
+V47,Luis Pena,LP,009-010,Shallow, C1691 ,,1,,,,,,,,,
+V47,Luis Pena,LP,039-040,Deep, C1691 ,,1,,,,,,,,,
+V41,Luis Pena,LP,001-002,Shallow, C1701 ,,,,,,,,,,,0
+V41,Luis Pena,LP,029-030',Deep, C1701 ,,,,,,,,,,,0
+V57,Los Corchos,LP,001-002,Shallow, C1703 ,,,,,,,,,,,0
+V57,Los Corchos,LP,029-030',Deep, C1703 ,,,,,,,,,,,0
+N70,Carlos Rosario,LP,003-004,Deep, C1708 ,0,,,,,,,,,,
+N70,Carlos Rosario,LP,003-004,Shallow, C1708 ,,,,,,,,,,,0
+N78,Carlos Rosario,LP,005-006,Shallow, C1708 ,,,,,,,,,0,,
+N78,Carlos Rosario,LP,033-034,Deep, C1708 ,,,1,,,,,,,,
+N82,Carlos Rosario,LP,007-008,Shallow, C1708 ,,,,,,,,,,,0
+N82,Carlos Rosario,LP,035-036',Deep, C1708 ,,1,,,,,,,,,
+N84,Carlos Rosario,LP,007-008,Shallow, C1708 ,,,,,,,,,,,0
+N84,Carlos Rosario,LP,035-036',Deep, C1708 ,,,,1,,,,,,,
+N85,Carlos Rosario,LP,007-008,Shallow, C1708 ,,,,,,,,,,,0
+N85,Carlos Rosario,LP,035-036',Deep, C1708 ,,,,,,,,,,,0
+N87,Carlos Rosario,LP,009-010,Shallow, C1708 ,,,,,,,,1,,,
+N87,Carlos Rosario,LP,039-040,Deep, C1708 ,,,,,,1,,,,,
+N91,Carlos Rosario,LP,009-010,Shallow, C1708 ,,,,,,,,,,,0
+N91,Carlos Rosario,LP,039-040,Deep, C1708 ,,1,,,,,,,,,
+N5,Los Corchos,LP,003-004,Deep, C1690 ,0,,,,,,,,,,
+N5,Los Corchos,LP,003-004,Shallow, C1690 ,,,,,,,,,,,0
+N50,Luis Pena,CR,041-042,Shallow, C1713 ,,1,,,,,,,,,
+N50,Luis Pena,CR,051-052,Deep, C1713 ,,1,,,,,,,,,
+N51,Luis Pena,CR,041-042,Shallow, C1727 ,,,,,,,,,,,0
+N51,Luis Pena,CR,051-052,Deep, C1727 ,,1,,,,,,,,,
+N52,Luis Pena,CR,041-042,Shallow, C1713 ,,,,,,,,,,,0
+N52,Luis Pena,CR,051-052,Deep, C1713 ,,1,,,,,,,,,
+N53,Luis Pena,CR,043-044,Shallow, C1727 ,,,,,,,,,,,0
+N53,Luis Pena,CR,055-056,Deep, C1727 ,,1,,,,,,,,,
+N54,Luis Pena,CR,043-044,Shallow, C1733 ,1,,,,,,,,,,
+N54,Luis Pena,CR,055-056,Deep, C1733 ,,1,,,,,,,,,
+N55,Luis Pena,CR,043-044,Shallow, C1727 ,,1,,,,,,,,,
+N55,Luis Pena,CR,055-056,Deep, C1727 ,,1,,,,,,,,,
+N56,Luis Pena,CR,045-046,Shallow, C1727 ,,,,,,,,,,,0
+N56,Luis Pena,CR,053-054,Deep, C1727 ,,1,,,,,,,,,
+N57,Luis Pena,CR,045-046,Shallow, C1733 ,,,,,,,,,,,0
+N57,Luis Pena,CR,053-054,Deep, C1733 ,,1,,,,,,,,,
+N58,Luis Pena,CR,045-046,Shallow, C1733 ,,,,,,,,,,,0
+N58,Luis Pena,CR,053-054,Deep, C1733 ,,,,,,,,1,,,
+N59,Luis Pena,CR,047-048,Shallow,,1,,,,,,,,,,
+N59,Luis Pena,CR,057-058,Deep,,,,,1,,,,,,,
+N6,Los Corchos,LP,003-004,Deep, C1433,0,,,,,,,,,,
+N6,Los Corchos,LP,003-004,Shallow, C1433,,,,,,,,,,,0
+N60,Luis Pena,CR,047-048,Shallow, C1713 ,,,,,,,,,,,1
+N60,Luis Pena,CR,057-058,Deep, C1713 ,,1,,,,,,,,,
+N61,Luis Pena,CR,047-048,Shallow, C1713 ,1,,,,,,,,,,
+N61,Luis Pena,CR,057-058,Deep, C1713 ,,1,,,,,,,,,
+N62,Luis Pena,CR,049-050,Shallow, C1733 ,,1,,,,,,,,,
+N62,Luis Pena,CR,059-060,Deep, C1733 ,,,,,,,,,,,0
+N63,Luis Pena,CR,049-050,Shallow, C1727 ,,1,,,,,,,,,
+N63,Luis Pena,CR,059-060,Deep, C1727 ,,,,,,,,,,,0
+N64,Luis Pena,CR,049-050,Shallow, C1733 ,,,,,,,,,,,1
+N64,Luis Pena,CR,059-060,Deep, C1733 ,,1,,,,,,,,,
+N65,Carlos Rosario,LP,001-002,Shallow, C1739 ,,,,,,,,,,1,
+N65,Carlos Rosario,LP,029-030',Deep, C1739 ,,,,,,,,,,,0
+N36,Luis Pena,LP,001-002,Shallow, C1713 ,,,,,,,,,,,0
+N36,Luis Pena,LP,029-030',Deep, C1713 ,,,,,,,,,,,0
+N40,Luis Pena,LP,003-004,Deep, C1713 ,0,,,,,,,,,,
+N40,Luis Pena,LP,003-004,Shallow, C1713 ,,,,,,,,,,,0
+N41,Luis Pena,LP,005-006,Shallow, C1713 ,,,,,,,,,,,0
+N41,Luis Pena,LP,033-034,Deep, C1713 ,,,,,,,,,,,0
+N69,Carlos Rosario,LP,001-002,Shallow, C1739 ,,,,1,,,,,,,
+N69,Carlos Rosario,LP,029-030',Deep, C1739 ,,,,,,,,,,,0
+N90,Carlos Rosario,LP,009-010,Shallow, C1722 ,,,,,,,,,,,0
+N90,Carlos Rosario,LP,039-040,Deep, C1722 ,,,,,,,,,,,0
+N35,Luis Pena,LP,001-002,Shallow, C1725 ,,,,,,,,,,,0
+N35,Luis Pena,LP,029-030',Deep, C1725 ,,,,,,,,,,,0
+N71,Carlos Rosario,LP,003-004,Deep, C1742 ,0,,,,,,,,,,
+N71,Carlos Rosario,LP,003-004,Shallow, C1742 ,,,,,,,,,,,0
+N72,Carlos Rosario,LP,003-004,Deep, C1739 ,0,,,,,,,,,,
+N72,Carlos Rosario,LP,003-004,Shallow, C1739 ,,,,,,,,,,0,
+N73,Carlos Rosario,LP,003-004,Deep, C1739 ,0,,,,,,,,,,
+N73,Carlos Rosario,LP,003-004,Shallow, C1739 ,,,,,,,,,,,0
+N34,Luis Pena,LP,001-002,Shallow, C1727 ,,,,,,0,,,,,
+N34,Luis Pena,LP,029-030',Deep, C1727 ,,,,1,,,,,,,
+N75,Carlos Rosario,LP,003-004,Deep, C1745 ,0,,,,,,,,,,
+N75,Carlos Rosario,LP,003-004,Shallow, C1745 ,,,,,,,,,,,0
+N76,Carlos Rosario,LP,005-006,Shallow, C1692 ,,,,,,,,,,0,
+N76,Carlos Rosario,LP,033-034,Deep, C1692 ,,1,,,,,,,,,
+N37,Luis Pena,LP,001-002,Shallow, C1727 ,,,,,,,,,,,0
+N37,Luis Pena,LP,029-030',Deep, C1727 ,,1,,,,,,,,,
+N42,Luis Pena,LP,005-006,Shallow, C1727 ,,,,,,,,,,,0
+N42,Luis Pena,LP,033-034,Deep, C1727 ,,1,,,,,,,,,
+N43,Luis Pena,LP,005-006,Shallow, C1727 ,,,,,,,,,,,0
+N43,Luis Pena,LP,033-034,Deep, C1727 ,,,,,,,,,,,0
+N8,Los Corchos,LP,005-006,Shallow, C1697 ,,,,,,,,0,,,
+N8,Los Corchos,LP,033-034,Deep, C1697 ,,,,,,1,,,,,
+N80,Carlos Rosario,LP,005-006,Shallow, C1739 ,,,,,,,,,,0,
+N80,Carlos Rosario,LP,033-034,Deep, C1739 ,,,1,,,,,,,,
+N44,Luis Pena,LP,007-008,Shallow, C1727 ,,,,,,,,,,,0
+N44,Luis Pena,LP,035-036',Deep, C1727 ,,,0,,,,,,,,
+N47,Luis Pena,LP,009-010,Shallow, C1727 ,,,,,,,,,,,0
+N47,Luis Pena,LP,039-040,Deep, C1727 ,,1,,,,,,,,,
+N83,Carlos Rosario,LP,007-008,Shallow, C1738 ,,,1,,,,,,,,
+N83,Carlos Rosario,LP,035-036',Deep, C1738 ,,1,,,,,,,,,
+N48,Luis Pena,LP,009-010,Shallow, C1727 ,,,,,,,,,,,0
+N48,Luis Pena,LP,039-040,Deep, C1727 ,,1,,,,,,,,,
+N68,Carlos Rosario,LP,001-002,Shallow, C1732 ,,,,,,,,,,,0
+N68,Carlos Rosario,LP,029-030',Deep, C1732 ,,,,,,,,,,,0
+N79,Carlos Rosario,LP,005-006,Shallow, C1732 ,,,,,,,,,,0,
+N79,Carlos Rosario,LP,033-034,Deep, C1732 ,,,1,,,,,,,,
+N88,Carlos Rosario,LP,009-010,Shallow, C1732 ,,,,,,,,1,,,
+N88,Carlos Rosario,LP,039-040,Deep, C1732 ,,1,,,,,,,,,
+N38,Luis Pena,LP,003-004,Deep, C1733 ,0,,,,,,,,,,
+N38,Luis Pena,LP,003-004,Shallow, C1733 ,,,,,,,,,,,0
+N89,Carlos Rosario,LP,009-010,Shallow, C1742 ,,,,,,,,,,,0
+N89,Carlos Rosario,LP,039-040,Deep, C1742 ,,1,,,,,,,,,
+N9,Los Corchos,LP,005-006,Shallow, C1711 ,,1,,,,,,,,,
+N9,Los Corchos,LP,033-034,Deep, C1711 ,,,,,,,,,,,0
+N39,Luis Pena,LP,003-004,Deep, C1733 ,0,,,,,,,,,,
+N39,Luis Pena,LP,003-004,Shallow, C1733 ,,,,,,,,,,,0
+N45,Luis Pena,LP,007-008,Shallow, C1733 ,,,,,,,,,0,,
+N45,Luis Pena,LP,035-036',Deep, C1733 ,,,,,,,,,,,0
+N92,Carlos Rosario,LP,009-010,Shallow, C1728 ,,,0,,,,,,,,
+N92,Carlos Rosario,LP,039-040,Deep, C1728 ,,,,,,,,1,,,
+N93,Carlos Rosario,LP,009-010,Shallow, C1742 ,,,,,,,,,,,0
+N93,Carlos Rosario,LP,039-040,Deep, C1742 ,,1,,,,,,,,,
+N94,Carlos Rosario,CR,041-042,Shallow, C1732 ,,,,,,,,,,,0
+N94,Carlos Rosario,CR,051-052,Deep, C1732 ,,,,,,,,,,,0
+N95,Carlos Rosario,CR,043-044,Shallow, C1735 ,,,,,,,,,,,0
+N95,Carlos Rosario,CR,055-056,Deep, C1735 ,,,,,,,,,,,0
+N96,Carlos Rosario,CR,045-046,Shallow, C1748 ,,1,,,,,,,,,
+N96,Carlos Rosario,CR,053-054,Deep, C1748 ,,1,,,,,,,,,
+N97,Carlos Rosario,CR,047-048,Shallow, C1739 ,1,,,,,,,,,,
+N97,Carlos Rosario,CR,057-058,Deep, C1739 ,,,1,,,,,,,,
+N98,Carlos Rosario,CR,047-048,Shallow, C1732 ,1,,,,,,,,,,
+N98,Carlos Rosario,CR,057-058,Deep, C1732 ,,,,,,,,,,,0
+N99,Carlos Rosario,CR,049-050,Shallow, C1749 ,,1,,,,,,,,,
+N99,Carlos Rosario,CR,059-060,Deep, C1749 ,,1,,,,,,,,,
+V1,Carlos Rosario,CR,041-042,Shallow, C1705 ,,,,,,,,,,,0
+V1,Carlos Rosario,CR,051-052,Deep, C1705 ,,,,,,,,,,,0
+V10,Carlos Rosario,CR,045-046,Shallow, C1732 ,,1,,,,,,,,,
+V10,Carlos Rosario,CR,053-054,Deep, C1732 ,,,,,,,,,,,0
+V100,Luis Pena,CR,041-042,Shallow,,,1,,,,,,,,,
+V100,Luis Pena,CR,051-052,Deep,,,1,,,,,,,,,
+V11,Carlos Rosario,CR,045-046,Shallow, C1708 ,,1,,,,,,,,,
+V11,Carlos Rosario,CR,053-054,Deep, C1708 ,,1,,,,,,,,,
+V12,Carlos Rosario,CR,045-046,Shallow, C1747 ,,1,,,,,,,,,
+V12,Carlos Rosario,CR,053-054,Deep, C1747 ,,1,,,,,,,,,
+V13,Carlos Rosario,CR,047-048,Shallow, C1705 ,1,,,,,,,,,,
+V13,Carlos Rosario,CR,057-058,Deep, C1705 ,,1,,,,,,,,,
+V14,Carlos Rosario,CR,047-048,Shallow, C1739 ,1,,,,,,,,,,
+V14,Carlos Rosario,CR,057-058,Deep, C1739 ,,1,,,,,,,,,
+V15,Carlos Rosario,CR,047-048,Shallow, C1691 ,,,,,,,,,,,0
+V15,Carlos Rosario,CR,057-058,Deep, C1691 ,,1,,,,,,,,,
+V16,Carlos Rosario,CR,047-048,Shallow, C1732 ,,,,,,,,,,,0
+V16,Carlos Rosario,CR,057-058,Deep, C1732 ,,,,,,,,,,,0
+V17,Carlos Rosario,CR,049-050,Shallow, C1742 ,,1,,,,,,,,,
+V17,Carlos Rosario,CR,059-060,Deep, C1742 ,,1,,,,,,,,,
+V18,Carlos Rosario,CR,049-050,Shallow, C1732 ,,,,,0,,,,,,
+V18,Carlos Rosario,CR,059-060,Deep, C1732 ,,,,,,,,,,,0
+V19,Carlos Rosario,CR,049-050,Shallow, C1732 ,,,,,,,,,,,0
+V19,Carlos Rosario,CR,059-060,Deep, C1732 ,,1,,,,,,,,,
+V2,Carlos Rosario,CR,041-042,Shallow, C1708 ,,,,1,,,,,,,
+V2,Carlos Rosario,CR,051-052,Deep, C1708 ,,,,,,,,,,,0
+V20,Carlos Rosario,CR,049-050,Shallow, C1691 ,,1,,,,,,,,,
+V20,Carlos Rosario,CR,059-060,Deep, C1691 ,,1,,,,,,,,,
+V21,Culebrita,LP,001-002,Shallow, C1746 ,,,1,,,,,,,,
+V21,Culebrita,LP,029-030',Deep, C1746 ,,1,,,,,,,,,
+V22,Culebrita,LP,001-002,Shallow, C1734 ,,1,,,,,,,,,
+V22,Culebrita,LP,029-030',Deep, C1734 ,,1,,,,,,,,,
+V23,Culebrita,LP,003-004,Deep, C1744 ,0,,,,,,,,,,
+V23,Culebrita,LP,003-004,Shallow, C1744 ,1,,,,,,,,,,
+V24,Culebrita,LP,003-004,Deep, C1729 ,0,,,,,,,,,,
+V24,Culebrita,LP,003-004,Shallow, C1729 ,,,,,,,,,0,,
+V25,Culebrita,LP,005-006,Shallow, C1714 ,,1,,,,,,,,,
+V25,Culebrita,LP,033-034,Deep, C1714 ,,,1,,,,,,,,
+V26,Culebrita,LP,005-006,Shallow, C1746 ,,,0,,,,,,,,
+V26,Culebrita,LP,033-034,Deep, C1746 ,,,,1,,,,,,,
+V27,Culebrita,LP,007-008,Shallow, C1734 ,,,,,,,,,,,0
+V27,Culebrita,LP,035-036',Deep, C1734 ,,,,1,,,,,,,
+V28,Culebrita,LP,007-008,Shallow, C1734 ,,,,0,,,,,,,
+V28,Culebrita,LP,035-036',Deep, C1734 ,,,,,,,,,,,0
+V29,Culebrita,LP,009-010,Shallow, C1734 ,,,0,,,,,,,,
+V29,Culebrita,LP,039-040,Deep, C1734 ,,1,,,,,,,,,
+V3,Carlos Rosario,CR,041-042,Shallow, C1708 ,,,,,,,,,,,0
+V3,Carlos Rosario,CR,051-052,Deep, C1708 ,,,,,,,,,,,0
+V30,Culebrita,LP,009-010,Shallow, C1706 ,,,1,,,,,,,,
+V30,Culebrita,LP,039-040,Deep, C1706 ,,1,,,,,,,,,
+V31,Culebrita,CR,041-042,Shallow, C1744 ,,,,,,,,,,,0
+V31,Culebrita,CR,051-052,Deep, C1744 ,,,,,,1,,,,,
+V32,Culebrita,CR,041-042,Shallow, C1706 ,,,,,,,,,,,0
+V32,Culebrita,CR,051-052,Deep, C1706 ,,1,,,,,,,,,
+V33,Culebrita,CR,043-044,Shallow, C1746 ,,1,,,,,,,,,
+V33,Culebrita,CR,055-056,Deep, C1746 ,,1,,,,,,,,,
+V34,Culebrita,CR,043-044,Shallow, C1746 ,1,,,,,,,,,,
+V34,Culebrita,CR,055-056,Deep, C1746 ,,,,,,,,,,,0
+V35,Culebrita,CR,045-046,Shallow, C1706 ,,,,1,,,,,,,
+V35,Culebrita,CR,053-054,Deep, C1706 ,,,,,,,,,,,0
+V36,Culebrita,CR,045-046,Shallow, C1734 ,,,,,,,,,,,0
+V36,Culebrita,CR,053-054,Deep, C1734 ,,,,,,,,,,,0
+V37,Culebrita,CR,047-048,Shallow, C1706 ,,,,,,,,,,,0
+V37,Culebrita,CR,057-058,Deep, C1706 ,,,,,,,,,,,0
+V38,Culebrita,CR,047-048,Shallow, C1699 ,1,,,,,,,,,,
+V38,Culebrita,CR,057-058,Deep, C1699 ,,1,,,,,,,,,
+V39,Culebrita,CR,049-050,Shallow, C1706 ,,1,,,,,,,,,
+V39,Culebrita,CR,059-060,Deep, C1706 ,,1,,,,,,,,,
+V4,Carlos Rosario,CR,041-042,Shallow, C1739 ,,,,,,,,,1,,
+V4,Carlos Rosario,CR,051-052,Deep, C1739 ,,,,,,,,,,,0
+V40,Culebrita,CR,049-050,Shallow, C1734 ,,,,,,,,,,,0
+V40,Culebrita,CR,059-060,Deep, C1734 ,,1,,,,,,,,,
+N46,Luis Pena,LP,007-008,Shallow, C1733 ,,,,,,,,,,,0
+N46,Luis Pena,LP,035-036',Deep, C1733 ,,1,,,,,,,,,
+V42,Luis Pena,LP,003-004,Deep, C1716 ,0,,,,,,,,,,
+V42,Luis Pena,LP,003-004,Shallow, C1716 ,,,,,,,,,,,0
+V43,Luis Pena,LP,005-006,Shallow, C1730 ,,,,1,,,,,,,
+V43,Luis Pena,LP,033-034,Deep, C1730 ,,,,,,,,,1,,
+V44,Luis Pena,LP,005-006,Shallow, C1716 ,,,,,,,,,,,1
+V44,Luis Pena,LP,033-034,Deep, C1716 ,,,,,,,,,,,0
+V45,Luis Pena,LP,007-008,Shallow, C1716 ,,,,,,,,,,,0
+V45,Luis Pena,LP,035-036',Deep, C1716 ,,,,,,0,,,,,
+N49,Luis Pena,LP,009-010,Shallow, C1733 ,,,,,,,,,,,0
+N49,Luis Pena,LP,039-040,Deep, C1733 ,,,,,,,,,,,0
+N12,Los Corchos,LP,007-008,Shallow, C1741 ,,,,,,,,,,,0
+N12,Los Corchos,LP,035-036',Deep, C1741 ,,,,,,,,,,,0
+V48,Luis Pena,CR,041-042,Shallow, C1691 ,,1,,,,,,,,,
+V48,Luis Pena,CR,051-052,Deep, C1691 ,,,1,,,,,,,,
+V49,Luis Pena,CR,043-044,Shallow, C1695 ,,,1,,,,,,,,
+V49,Luis Pena,CR,055-056,Deep, C1695 ,,1,,,,,,,,,
+V5,Carlos Rosario,CR,043-044,Shallow, C1708 ,1,,,,,,,,,,
+V5,Carlos Rosario,CR,055-056,Deep, C1708 ,,,,,,,,,,,0
+V50,Luis Pena,CR,045-046,Shallow, C1730 ,,,,,,,,,,,0
+V50,Luis Pena,CR,053-054,Deep, C1730 ,,1,,,,,,,,,
+V51,Luis Pena,CR,047-048,Shallow, C1701 ,,1,,,,,,,,,
+V51,Luis Pena,CR,057-058,Deep, C1701 ,,,,,,,,,,,0
+V52,Luis Pena,CR,049-050,Shallow, C1730 ,,1,,,,,,,,,
+V52,Luis Pena,CR,059-060,Deep, C1730 ,,,,,,,,,,,0
+V53,Luis Pena,CR,041-042,Shallow, C1701 ,,,,,,,,,,,0
+V53,Luis Pena,CR,051-052,Deep, C1701 ,,,,,,,,,,,0
+V54,Luis Pena,CR,043-044,Shallow, C1688 ,,,,,,,,,,,0
+V54,Luis Pena,CR,055-056,Deep, C1688 ,,,,,,,,,,,0
+V55,Luis Pena,CR,045-046,Shallow, C1727 ,,,,,,,,,,,0
+V55,Luis Pena,CR,053-054,Deep, C1727 ,,,1,,,,,,,,
+V56,Los Corchos,LP,001-002,Shallow, C1700 ,,,,,,,,,,,0
+V56,Los Corchos,LP,029-030',Deep, C1700 ,,,,,1,,,,,,
+N7,Los Corchos,LP,005-006,Shallow, C1741 ,,,,1,,,,,,,
+N7,Los Corchos,LP,033-034,Deep, C1741 ,,,,1,,,,,,,
+V58,Los Corchos,LP,001-002,Shallow, C1720 ,,,1,,,,,,,,
+V58,Los Corchos,LP,029-030',Deep, C1720 ,,1,,,,,,,,,
+V59,Los Corchos,LP,001-002,Shallow, C1685 ,,1,,,,,,,,,
+V59,Los Corchos,LP,029-030',Deep, C1685 ,,,,,,,,,,,0
+V6,Carlos Rosario,CR,043-044,Shallow, C1705 ,,1,,,,,,,,,
+V6,Carlos Rosario,CR,055-056,Deep, C1705 ,,,,,,,,,,,0
+V60,Los Corchos,LP,003-004,Shallow, C1704 ,,,,,,,,,,,0
+V60,Los Corchos,LP,033-034,Deep, C1704 ,,,,,,,,,,,0
+V61,Los Corchos,LP,003-004,Deep, C1696 ,0,,,,,,,,,,
+V61,Los Corchos,LP,003-004,Shallow, C1696 ,,,,,1,,,,,,
+V62,Los Corchos,LP,003-004,Shallow, C1704 ,,,,,,,,,,,0
+V62,Los Corchos,LP,003-004,Deep, C1704 ,0,,,,,,,,,,
+V63,Los Corchos,LP,005-006,Shallow, C1709 ,,,,,,,,,,,0
+V63,Los Corchos,LP,033-034,Deep, C1709 ,,,1,,,,,,,,
+V64,Los Corchos,LP,005-006,Shallow, C1702 ,,,1,,,,,,,,
+V64,Los Corchos,LP,033-034,Deep, C1702 ,,1,,,,,,,,,
+V65,Los Corchos,LP,007-008,Shallow, C1731 ,,,,,,,,,,,0
+V65,Los Corchos,LP,035-036',Deep, C1731 ,,,1,,,,,,,,
+V66,Los Corchos,LP,007-008,Shallow, C1740 ,,,,,,,,,,,0
+V66,Los Corchos,LP,035-036',Deep, C1740 ,,1,,,,,,,,,
+V67,Los Corchos,LP,007-008,Shallow, C1720 ,,,,,,,,,,,0
+V67,Los Corchos,LP,035-036',Deep, C1720 ,,1,,,,,,,,,
+V68,Los Corchos,LP,009-010,Shallow, C1682 ,,,,,,,,,,,0
+V68,Los Corchos,LP,039-040,Deep, C1682 ,,,,,,,,,,,0
+V69,Los Corchos,LP,009-010,Shallow, C1740 ,,,,,,,,,,,0
+V69,Los Corchos,LP,039-040,Deep, C1740 ,,1,,,,,,,,,
+V7,Carlos Rosario,CR,043-044,Shallow, C1747 ,,1,,,,,,,,,
+V7,Carlos Rosario,CR,055-056,Deep, C1747 ,,1,,,,,,,,,
+V70,Los Corchos,LP,009-010,Shallow, C1707 ,,,,,,,,,,,0
+V70,Los Corchos,LP,039-040,Deep, C1707 ,,,,,,,,,,,0
+V71,Los Corchos,LP,001-002,Shallow, C1740,,,,,,,,,,,0
+V71,Los Corchos,LP,029-030',Deep,C1740,,,,,,,,1,,,
+V72,Los Corchos,LP,003-004,Shallow, C1694 ,1,,,,,,,,,,
+V72,Los Corchos,LP,003-004,Deep, C1694 ,0,,,,,,,,,,
+V73,Los Corchos,CR,041-042,Shallow, C1718 ,,,,,,,,,,,0
+V73,Los Corchos,CR,051-052,Deep, C1718 ,,,1,,,,,,,,
+V74,Los Corchos,CR,041-042,Shallow, C1743 ,,,,,,,,,,,0
+V74,Los Corchos,CR,051-052,Deep, C1743 ,,1,,,,,,,,,
+V75,Los Corchos,CR,041-042,Shallow, C1751 ,,1,,,,,,,,,
+V75,Los Corchos,CR,051-052,Deep, C1751 ,,,,,,,,,,,0
+V76,Los Corchos,CR,043-044,Shallow,,1,,,,,,,,,,
+V76,Los Corchos,CR,055-056,Deep,,,,,,,,,,,,0
+V77,Los Corchos,CR,043-044,Shallow,,,1,,,,,,,,,
+V77,Los Corchos,CR,055-056,Deep,,,1,,,,,,,,,
+V78,Los Corchos,CR,043-044,Shallow,C1696,,,,,,,,1,,,
+V78,Los Corchos,CR,055-056,Deep,C1696,,1,,,,,,,,,
+V79,Los Corchos,CR,045-046,Shallow, C1723 ,,,,,,,,,,,0
+V79,Los Corchos,CR,053-054,Deep, C1723 ,,1,,,,,,,,,
+V8,Carlos Rosario,CR,043-044,Shallow, C1742 ,1,,,,,,,,,,
+V8,Carlos Rosario,CR,055-056,Deep, C1742 ,,1,,,,,,,,,
+V80,Los Corchos,CR,045-046,Shallow,,,1,,,,,,,,,
+V80,Los Corchos,CR,053-054,Deep,,,1,,,,,,,,,
+V81,Los Corchos,CR,045-046,Shallow, C1696 ,,1,,,,,,,,,
+V81,Los Corchos,CR,053-054,Deep, C1696 ,,,,,,1,,,,,
+V82,Los Corchos,CR,047-048,Shallow, C1750 ,,,,,,,,,,,0
+V82,Los Corchos,CR,057-058,Deep, C1750 ,,1,,,,,,,,,
+V83,Los Corchos,CR,047-048,Shallow, C1721 ,,,,,,,,,,,0
+V83,Los Corchos,CR,057-058,Deep, C1721 ,,,,,,,,,1,,
+V84,Los Corchos,CR,047-048,Shallow,C1755,,,,,,,,,,,0
+V84,Los Corchos,CR,057-058,Deep,C1755,,,,,,,,,,,0
+V85,Los Corchos,CR,049-050,Shallow,,,1,,,,,,,,,
+V85,Los Corchos,CR,059-060,Deep,,,,,,,,,,,,1
+V86,Los Corchos,CR,049-050,Shallow, C1681 ,,,,,,,,,,,0
+V86,Los Corchos,CR,059-060,Deep, C1681 ,,1,,,,,,,,,
+V87,Los Corchos,CR,049-050,Shallow,,,,1,,,,,,,,
+V87,Los Corchos,CR,059-060,Deep,,,1,,,,,,,,,
+V88,Los Corchos,CR,049-050,Shallow,,,1,,,,,,,,,
+V88,Los Corchos,CR,059-060,Deep,,,1,,,,,,,,,
+V89,Los Corchos,CR,049-050,Shallow,,,,,1,,,,,,,
+V89,Los Corchos,CR,059-060,Deep,,,1,,,,,,,,,
+V9,Carlos Rosario,CR,045-046,Shallow, C1739 ,,1,,,,,,,,,
+V9,Carlos Rosario,CR,053-054,Deep, C1739 ,,1,,,,,,,,,
+V90,Los Corchos,CR,043-044,Shallow,,1,,,,,,,,,,
+V90,Los Corchos,CR,055-056,Deep,,,1,,,,,,,,,
+V91,Luis Pena,LP,003-004,Deep,,0,,,,,,,,,,
+V91,Luis Pena,LP,003-004,Shallow,,,,,,,,,,,,0
+V92,Luis Pena,LP,005-006,Shallow,,,,,,,,,,,,0
+V92,Luis Pena,LP,033-034,Deep,,,,,,,,,,,,0
+V93,Luis Pena,LP,005-006,Shallow, C1715 ,,,1,,,,,,,,
+V93,Luis Pena,LP,033-034,Deep, C1715 ,,1,,,,,,,,,
+V94,Luis Pena,LP,007-008,Shallow, C1716 ,,,,,,,,,,,0
+V94,Luis Pena,LP,035-036',Deep, C1716 ,,1,,,,,,,,,
+V95,Luis Pena,CR,041-042,Shallow, C1757,,,,,,,,,,,0
+V95,Luis Pena,CR,051-052,Deep, C1757,,,,,,,,,,,0
+V96,Luis Pena,CR,043-044,Shallow,,,1,,,,,,,,,
+V96,Luis Pena,CR,055-056,Deep,,,,,,,,,,,,0
+V97,Luis Pena,CR,045-046,Shallow, C1716 ,,,,,,,,,,,0
+V97,Luis Pena,CR,053-054,Deep, C1716 ,,1,,,,,,,,,
+V98,Luis Pena,CR,047-048,Shallow,,1,,,,,,,,,,
+V98,Luis Pena,CR,057-058,Deep,,,1,,,,,,,,,
+V99,Luis Pena,CR,049-050,Shallow, C1756,,1,,,,,,,,,
+V99,Luis Pena,CR,059-060,Deep, C1756,,,,,,,,,,1,
